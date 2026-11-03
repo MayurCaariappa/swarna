@@ -36,7 +36,12 @@ export default function PartnerHome() {
   const { profile } = useAuth();
   const header = (
     <PageHeader
-      eyebrow={`Here's how ${name} is doing`}
+      eyebrow={new Date(today + "T12:00").toLocaleDateString(undefined, {
+        weekday: "long",
+        day: "numeric",
+        month: "short",
+      })}
+      subtitle={`Here's how ${name} is doing`}
       title={`${greeting()
         .replace("Good ", "")
         .replace(/^./, (c) =>

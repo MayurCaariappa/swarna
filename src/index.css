@@ -1515,3 +1515,4 @@ details[open] summary {
   font-size: 0.94rem;
   font-weight: 600;
 }
+.page-sub { font-size: 0.95rem; font-weight: 600; color: var(--muted); margin-top: 2px; }
