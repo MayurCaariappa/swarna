@@ -112,3 +112,12 @@ export function isPredictedBleedDay(
   const offIndex = info.number - 1;
   return offIndex >= start && offIndex < start + length;
 }
+
+/** The next expected withdrawal bleed that hasn't finished yet (this pack's or the next). */
+export function nextPillBleed(cfg: PackConfig, today: Date) {
+  const info = packDay(cfg, today);
+  const current = expectedBleed(info, cfg);
+  if (current && differenceInCalendarDays(current.end, today) >= 0)
+    return current;
+  return expectedBleed(packDay(cfg, info.nextPackStart), cfg);
+}

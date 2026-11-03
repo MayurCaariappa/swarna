@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { startSync } from "../data/sync";
+import { PartnerDataProvider } from "../partner/PartnerData";
 import { refreshPushSubscription } from "../lib/push";
 import { useOnline } from "../lib/useOnline";
 
@@ -27,7 +28,13 @@ export default function Layout() {
         <div className="offline-pill">Offline — changes will sync later</div>
       )}
       <main className="page">
-        <Outlet />
+        {isOwner ? (
+          <Outlet />
+        ) : (
+          <PartnerDataProvider>
+            <Outlet />
+          </PartnerDataProvider>
+        )}
       </main>
       <nav className="tabbar">
         {isOwner ? (
@@ -42,10 +49,20 @@ export default function Layout() {
             </NavLink>
           </>
         ) : (
-          <NavLink to="/partner">
-            <TabIcon d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10Z" />
-            Home
-          </NavLink>
+          <>
+            <NavLink to="/partner" end>
+              <TabIcon d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10Z" />
+              Home
+            </NavLink>
+            <NavLink to="/partner/calendar">
+              <TabIcon d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" />
+              Calendar
+            </NavLink>
+            <NavLink to="/partner/history">
+              <TabIcon d="M4 6h16M4 12h10M4 18h7" />
+              History
+            </NavLink>
+          </>
         )}
         <NavLink to="/settings">
           <TabIcon d="M4 6h16M4 12h16M4 18h16" />

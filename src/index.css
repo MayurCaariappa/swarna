@@ -820,3 +820,53 @@ input:disabled {
 .sw.off {
   border: 1px dashed var(--border);
 }
+
+/* ── Partner ── */
+.bleeding-now {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.bleeding-answer {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+.bleeding-now.yes {
+  border-color: var(--bleed);
+  background: var(--bleed-soft);
+}
+.bleeding-now.yes .bleeding-answer {
+  color: var(--bleed);
+}
+.next-bleed {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  text-align: center;
+  gap: 8px;
+}
+.stat {
+  font-size: 1.5rem;
+  font-weight: 650;
+  color: var(--gold);
+}
+.history {
+  padding: 4px 16px;
+}
+.history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.history-row:last-child {
+  border-bottom: none;
+}
+.history-len {
+  color: var(--bleed);
+  font-weight: 600;
+}

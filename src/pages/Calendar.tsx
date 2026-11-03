@@ -1,110 +1,19 @@
 import {
-  addDays,
-  addMonths,
   differenceInCalendarDays,
-  endOfMonth,
-  endOfWeek,
   format,
   parseISO,
   startOfMonth,
-  startOfWeek,
 } from "date-fns";
 import { useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
+import CalendarGrid from "../components/calendar/CalendarGrid";
 import Disclaimer from "../components/Disclaimer";
 import PeriodEditor from "../components/period/PeriodEditor";
 import { endPeriod, setPillTaken } from "../data/actions";
-import type { PeriodRow, PillLogRow, TrackingRow } from "../data/db";
+import type { PeriodRow } from "../data/db";
 import { usePeriods, usePillLogs, useTracking } from "../data/hooks";
-import {
-  futureCycles,
-  naturalPeriods,
-  periodOn,
-  predict,
-  type PredictedCycle,
-} from "../lib/cycle";
-import {
-  isPredictedBleedDay,
-  packDay,
-  toISODate,
-  type PackConfig,
-} from "../lib/pill";
+import { buildMonthDays, monthGrid } from "../lib/calendarDays";
 import { useToday } from "../lib/useToday";
-
-const WEEK = { weekStartsOn: 1 as const }; // Monday first
-
-interface DayInfo {
-  date: string;
-  inMonth: boolean;
-  period?: PeriodRow;
-  predictedBleed: boolean;
-  pill?: { number: number; taken: boolean; missed: boolean };
-  off?: number;
-  fertile: boolean;
-  ovulation: boolean;
-}
-
-/** Everything drawn on one calendar day. */
-function describeDay(
-  date: string,
-  inMonth: boolean,
-  today: string,
-  periods: PeriodRow[],
-  tracking: TrackingRow | null,
-  logs: Map<string, PillLogRow> | undefined,
-  cycles: PredictedCycle[],
-): DayInfo {
-  const info: DayInfo = {
-    date,
-    inMonth,
-    predictedBleed: false,
-    fertile: false,
-    ovulation: false,
-  };
-  info.period = periodOn(periods, date, today);
-
-  // Don't predict a bleed right after one she has logged.
-  const recentlyLogged = periods.some((p) => {
-    const n = differenceInCalendarDays(parseISO(date), parseISO(p.start_date));
-    return n >= 0 && n < 12;
-  });
-
-  if (tracking?.mode === "pill" && tracking.pack_start_date) {
-    const cfg: PackConfig = {
-      packStart: tracking.pack_start_date,
-      activeDays: tracking.active_days,
-      breakDays: tracking.break_days,
-    };
-    const pd = packDay(cfg, parseISO(date));
-    if (pd.kind === "active") {
-      const taken = logs?.has(date) ?? false;
-      info.pill = { number: pd.number, taken, missed: !taken && date < today };
-    } else if (pd.kind === "off") {
-      info.off = pd.number;
-      info.predictedBleed =
-        !info.period &&
-        !recentlyLogged &&
-        date >= today &&
-        isPredictedBleedDay(cfg, pd);
-    }
-  }
-
-  if (tracking?.mode === "natural") {
-    for (const c of cycles) {
-      if (
-        date >= c.bleedStart &&
-        date <= c.bleedEnd &&
-        !info.period &&
-        !recentlyLogged &&
-        date >= today
-      )
-        info.predictedBleed = true;
-      if (date >= c.fertileStart && date <= c.fertileEnd) info.fertile = true;
-      if (date === c.ovulation) info.ovulation = true;
-    }
-  }
-  return info;
-}
 
 export default function Calendar() {
   const { session } = useAuth();
@@ -117,36 +26,16 @@ export default function Calendar() {
   const [selected, setSelected] = useState<string>(today);
   const [editing, setEditing] = useState<PeriodRow | "new" | null>(null);
 
-  const gridStart = startOfWeek(month, WEEK);
-  const gridEnd = endOfWeek(endOfMonth(month), WEEK);
-  const logs = usePillLogs(ownerId, toISODate(gridStart), toISODate(gridEnd));
+  const grid = monthGrid(month);
+  const logs = usePillLogs(ownerId, grid.from, grid.to);
 
-  const cycles = useMemo(() => {
-    if (!periods || tracking?.mode !== "natural") return [];
-    const p = predict(naturalPeriods(periods, tracking.natural_since), today);
-    return p ? futureCycles(p, 6) : [];
-  }, [periods, tracking, today]);
-
-  const days = useMemo(() => {
-    if (!periods || tracking === undefined) return [];
-    const out: DayInfo[] = [];
-    for (let d = gridStart; d <= gridEnd; d = addDays(d, 1)) {
-      out.push(
-        describeDay(
-          toISODate(d),
-          d.getMonth() === month.getMonth(),
-          today,
-          periods,
-          tracking,
-          logs,
-          cycles,
-        ),
-      );
-    }
-    return out;
-    // gridStart/gridEnd derive from month
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [month, today, periods, tracking, logs, cycles]);
+  const days = useMemo(
+    () =>
+      periods && tracking !== undefined
+        ? buildMonthDays(month, today, periods, tracking, logs ?? new Map())
+        : [],
+    [month, today, periods, tracking, logs],
+  );
 
   if (!periods || tracking === undefined) return null;
 
@@ -168,60 +57,19 @@ export default function Calendar() {
 
   return (
     <div className="stack">
-      <div className="cal-head">
-        <button
-          className="btn link"
-          onClick={() => setMonth((m) => addMonths(m, -1))}
-          aria-label="Previous month"
-        >
-          ‹
-        </button>
-        <h1>{format(month, "MMMM yyyy")}</h1>
-        <button
-          className="btn link"
-          onClick={() => setMonth((m) => addMonths(m, 1))}
-          aria-label="Next month"
-        >
-          ›
-        </button>
-      </div>
-
-      <div className="cal">
-        {["M", "T", "W", "T", "F", "S", "S"].map((w, i) => (
-          <div key={i} className="cal-wd">
-            {w}
-          </div>
-        ))}
-        {days.map((d) => (
-          <button
-            key={d.date}
-            className={[
-              "cal-day",
-              d.inMonth ? "" : "out",
-              d.period ? "bleed" : "",
-              d.predictedBleed ? "predicted" : "",
-              d.fertile ? "fertile" : "",
-              d.ovulation ? "ovulation" : "",
-              d.off ? "off" : "",
-              d.date === today ? "today" : "",
-              d.date === selected ? "selected" : "",
-            ].join(" ")}
-            onClick={() => {
-              setSelected(d.date);
-              setEditing(null);
-            }}
-          >
-            <span>{parseISO(d.date).getDate()}</span>
-            {d.pill && (
-              <i
-                className={`dot ${d.pill.taken ? "taken" : d.pill.missed ? "missed" : ""}`}
-              />
-            )}
-          </button>
-        ))}
-      </div>
-
-      <Legend pillMode={pillMode} />
+      <CalendarGrid
+        month={month}
+        onMonthChange={setMonth}
+        days={days}
+        today={today}
+        selected={selected}
+        onSelect={(d) => {
+          setSelected(d);
+          setEditing(null);
+        }}
+        pillMode={pillMode}
+        showPills
+      />
 
       {sel && (
         <section className="card stack">
@@ -318,41 +166,6 @@ export default function Calendar() {
       )}
 
       <Disclaimer />
-    </div>
-  );
-}
-
-function Legend({ pillMode }: { pillMode: boolean }) {
-  return (
-    <div className="legend small muted">
-      <span>
-        <i className="sw bleed" /> period
-      </span>
-      <span>
-        <i className="sw predicted" /> predicted
-      </span>
-      {pillMode ? (
-        <>
-          <span>
-            <i className="dot taken" /> pill taken
-          </span>
-          <span>
-            <i className="dot missed" /> not marked
-          </span>
-          <span>
-            <i className="sw off" /> break
-          </span>
-        </>
-      ) : (
-        <>
-          <span>
-            <i className="sw fertile" /> fertile window
-          </span>
-          <span>
-            <i className="sw ovulation" /> ovulation
-          </span>
-        </>
-      )}
     </div>
   );
 }

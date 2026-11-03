@@ -7,7 +7,9 @@ import Calendar from "./pages/Calendar";
 import InstallGuide from "./pages/InstallGuide";
 import Join from "./pages/Join";
 import Login from "./pages/Login";
-import PartnerHome from "./pages/PartnerHome";
+import PartnerCalendar from "./pages/partner/PartnerCalendar";
+import PartnerHistory from "./pages/partner/PartnerHistory";
+import PartnerHome from "./pages/partner/PartnerHome";
 import Settings from "./pages/Settings";
 import Today from "./pages/Today";
 import Welcome from "./pages/Welcome";
@@ -67,7 +69,11 @@ function AppRoutes() {
           </>
         )}
         {profile.role === "partner" && (
-          <Route path="/partner" element={<PartnerHome />} />
+          <>
+            <Route path="/partner" element={<PartnerHome />} />
+            <Route path="/partner/calendar" element={<PartnerCalendar />} />
+            <Route path="/partner/history" element={<PartnerHistory />} />
+          </>
         )}
         <Route path="/settings" element={<Settings />} />
       </Route>
