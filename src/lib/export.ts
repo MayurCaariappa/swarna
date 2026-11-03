@@ -197,7 +197,7 @@ export async function buildPdf(d: ExportData, o: ExportOptions): Promise<Blob> {
   const pageW = doc.internal.pageSize.getWidth();
   let y = M;
 
-  const gold: [number, number, number] = [134, 96, 16]; // dark enough for white header text
+  const gold: [number, number, number] = [23, 18, 31]; // ink headers, like the app
   const lastY = () =>
     (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable
       ?.finalY ?? y;
@@ -222,7 +222,7 @@ export async function buildPdf(d: ExportData, o: ExportOptions): Promise<Blob> {
       margin: { left: M, right: M },
       styles: { fontSize: 8.5, cellPadding: 4, overflow: "linebreak" },
       headStyles: { fillColor: gold, textColor: 255 },
-      alternateRowStyles: { fillColor: [248, 244, 236] },
+      alternateRowStyles: { fillColor: [246, 243, 252] },
       ...opts,
     });
     y = lastY() + 22;

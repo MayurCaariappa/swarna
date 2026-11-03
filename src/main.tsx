@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthProvider";
 import { captureInstallPrompt } from "./lib/platform";
+import "@fontsource-variable/manrope";
 import "./index.css";
 
 captureInstallPrompt();

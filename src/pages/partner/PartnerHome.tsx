@@ -1,22 +1,23 @@
-import { differenceInCalendarDays, format, parseISO } from "date-fns";
+import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
+import { Droplet, Pill } from "lucide-react";
 import { useAuth } from "../../auth/AuthProvider";
 import Disclaimer from "../../components/Disclaimer";
 import WelcomeCard from "../../components/WelcomeCard";
 import LogSummary from "../../components/log/LogSummary";
+import PackBars, { type BarState } from "../../components/ui/PackBars";
+import PageHeader from "../../components/ui/PageHeader";
 import { greeting } from "../../lib/greeting";
 import { cycleDay, naturalPeriods, periodOn, predict } from "../../lib/cycle";
 import {
   calibrateBleed,
   nextPillBleed,
   packDay,
+  packDays,
+  toISODate,
   type PackConfig,
 } from "../../lib/pill";
 import { BLEEDING, naturalPhase, pillPhase } from "../../lib/phase";
 import { usePartnerData } from "../../partner/PartnerData";
-
-const day = (d: Date) => format(d, "EEE d MMM");
-const inDays = (n: number) =>
-  n === 0 ? "today" : n === 1 ? "tomorrow" : `in ${n} days`;
 
 /** Partner home: bleeding now?, pack/cycle day, phase + tip, next bleed, pill today. */
 export default function PartnerHome() {
@@ -34,12 +35,14 @@ export default function PartnerHome() {
   const todayLog = logs?.[today];
   const { profile } = useAuth();
   const header = (
-    <div>
-      <h1>
-        {greeting()}, {profile?.display_name || "there"}
-      </h1>
-      <p className="muted">Here's how {name} is doing</p>
-    </div>
+    <PageHeader
+      eyebrow={`Here's how ${name} is doing`}
+      title={`${greeting()
+        .replace("Good ", "")
+        .replace(/^./, (c) =>
+          c.toUpperCase(),
+        )}, ${profile?.display_name || "there"}`}
+    />
   );
   const showPeriods = sharing?.share_periods ?? false;
   const showPill = sharing?.share_pill_status ?? false;
@@ -100,6 +103,71 @@ export default function PartnerHome() {
   const takenToday = takenDates.includes(today);
   const takenTime = takenAt[today];
 
+  // Where she is in her pack / cycle, for the hero.
+  const natural = tracking
+    ? naturalPeriods(periods, tracking.natural_since)
+    : [];
+  let big = "";
+  let of = "";
+  let bars: BarState[] = [];
+  if (pd && cfg) {
+    const packStart = addDays(
+      todayDate,
+      -((pd.kind === "active" ? pd.number : cfg.activeDays + pd.number) - 1),
+    );
+    big =
+      pd.kind === "active"
+        ? `Pill ${pd.number}`
+        : pd.kind === "off"
+          ? `Break ${pd.number}`
+          : "New pack soon";
+    of =
+      pd.kind === "active"
+        ? `of ${cfg.activeDays}`
+        : pd.kind === "off"
+          ? `of ${cfg.breakDays}`
+          : "";
+    if (pd.kind !== "before") {
+      bars = packDays(cfg, packStart).map((d) =>
+        d.date === today
+          ? "now"
+          : d.kind === "off"
+            ? d.predictedBleed
+              ? "bleed"
+              : "brk"
+            : d.date < today
+              ? "done"
+              : "todo",
+      );
+    }
+  } else if (prediction) {
+    const cd = cycleDay(natural, today) ?? 0;
+    big = `Day ${cd || "–"}`;
+    of = `of ~${prediction.avgCycle}`;
+    const length = Math.min(Math.max(prediction.avgCycle, cd), 45);
+    bars = Array.from({ length }, (_, i) => {
+      const date = toISODate(addDays(parseISO(prediction.lastStart), i));
+      if (date === today) return "now";
+      if (periodOn(periods, date, today)) return "bleed";
+      if (date >= prediction.fertileStart && date <= prediction.fertileEnd)
+        return "fert";
+      return date < today ? "done" : "todo";
+    });
+  }
+
+  const nextValue = bleeding
+    ? `Now · day ${bleedDay}`
+    : prediction && prediction.daysLate > 0
+      ? `${prediction.daysLate} day${prediction.daysLate === 1 ? "" : "s"} late`
+      : untilNext !== null
+        ? untilNext <= 0
+          ? "Today"
+          : untilNext === 1
+            ? "Tomorrow"
+            : `In ${untilNext} days`
+        : "–";
+  const pillTile = showPill && cfg && pd?.kind === "active";
+
   return (
     <div className="stack">
       {header}
@@ -121,76 +189,71 @@ export default function PartnerHome() {
       )}
 
       {showPeriods && tracking && (
-        <>
-          <section className={`card bleeding-now ${bleeding ? "yes" : ""}`}>
-            <p className="muted small">Bleeding now?</p>
-            <p className="bleeding-answer">
-              {bleeding ? `Yes · day ${bleedDay}` : "No"}
-            </p>
-          </section>
-
-          <section className="card hero">
-            <p className="muted">
-              {pd?.kind === "active"
-                ? `Pill ${pd.number} of ${cfg!.activeDays}`
-                : pd?.kind === "off"
-                  ? `Break day ${pd.number} of ${cfg!.breakDays}`
-                  : prediction
-                    ? `Cycle day ${cycleDay(naturalPeriods(periods, tracking.natural_since), today) ?? "–"}`
-                    : tracking.mode === "natural"
-                      ? "Natural cycle"
-                      : "Pill pack"}
-            </p>
-            {phase && <p className="hero-text">{phase.label}</p>}
-            {phase && <p className="muted small">{phase.tip}</p>}
-          </section>
-
-          {next && untilNext !== null && !bleeding && (
-            <section className="card">
-              <p className="muted small">Next bleed</p>
-              <p className="next-bleed">
-                {prediction && prediction.daysLate > 0
-                  ? `${prediction.daysLate} day${prediction.daysLate === 1 ? "" : "s"} later than predicted`
-                  : `Expected ${inDays(Math.max(untilNext, 0))}`}
-              </p>
-              <p className="muted small">
-                Around {day(next.start)}–{day(next.end)}
-                {cfg
-                  ? " · from the pack schedule"
-                  : prediction
-                    ? ` · confidence ${prediction.confidence}`
-                    : ""}
-              </p>
-            </section>
+        <section className="blk blk-lilac">
+          <div className="blk-head">
+            <span className={`blk-chip ${bleeding ? "bleed" : ""}`}>
+              {bleeding ? `Bleeding · day ${bleedDay}` : "Not bleeding"}
+            </span>
+            {phase && <span className="blk-line">{phase.label}</span>}
+          </div>
+          {big && (
+            <div className="big-row">
+              <span className="big-num">{big}</span>
+              {of && (
+                <span className="soft-ink" style={{ fontWeight: 700 }}>
+                  {of}
+                </span>
+              )}
+            </div>
           )}
-
+          {bars.length > 0 && <PackBars bars={bars} label={`${big} ${of}`} />}
+          {phase && <p className="blk-line">{phase.tip}</p>}
           {tracking.mode === "natural" && !prediction && (
-            <section className="card">
-              <p className="muted">
-                Predictions will appear once {name} logs a period.
-              </p>
-            </section>
-          )}
-        </>
-      )}
-
-      {showPill && cfg && pd?.kind === "active" && (
-        <section className="card">
-          <p className="muted small">Pill today</p>
-          {takenToday ? (
-            <p className="taken-badge">
-              Taken ✓
-              {takenTime && ` at ${format(parseISO(takenTime), "HH:mm")}`}
+            <p className="blk-line">
+              Predictions appear once {name} logs a period.
             </p>
-          ) : (
-            <p>Not marked yet</p>
           )}
         </section>
       )}
 
+      {(showPeriods && next) || pillTile ? (
+        <div className="quick">
+          {showPeriods && next && (
+            <section className={`tile blk-rose ${pillTile ? "" : "span-2"}`}>
+              <div className="tile-icon">
+                <Droplet size={18} />
+              </div>
+              <p className="tile-label">Next bleed</p>
+              <p className="tile-value">{nextValue}</p>
+              {!bleeding && (
+                <p className="tile-note">
+                  ~{format(next.start, "d MMM")} – {format(next.end, "d MMM")}
+                </p>
+              )}
+            </section>
+          )}
+          {pillTile && (
+            <section
+              className={`tile blk-mint ${showPeriods && next ? "" : "span-2"}`}
+            >
+              <div className="tile-icon">
+                <Pill size={18} />
+              </div>
+              <p className="tile-label">Pill today</p>
+              <p className="tile-value">{takenToday ? "Taken ✓" : "Not yet"}</p>
+              {takenToday && takenTime && (
+                <p className="tile-note">
+                  at {format(parseISO(takenTime), "HH:mm")}
+                </p>
+              )}
+            </section>
+          )}
+        </div>
+      ) : null}
+
       {todayLog && (
         <section className="card stack">
-          <p className="muted small">{name} today</p>
+          <h2>{name} today</h2>
           <LogSummary log={todayLog} />
         </section>
       )}

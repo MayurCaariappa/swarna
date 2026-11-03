@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import CycleChart from "../components/stats/CycleChart";
+import PageHeader from "../components/ui/PageHeader";
 import WeightChart from "../components/stats/WeightChart";
 import {
   useAllDailyLogs,
@@ -68,7 +69,7 @@ export default function Stats() {
 
   return (
     <div className="stack">
-      <h1>Stats</h1>
+      <PageHeader title="Stats" />
 
       <section className="card tiles">
         <Tile
@@ -241,7 +242,7 @@ function Tile({
   label: string;
 }) {
   return (
-    <div className="tile">
+    <div className="tile-stat">
       <p className="stat">
         {value ?? "–"}
         {value !== null && unit && <span className="unit"> {unit}</span>}

@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { addMonths, format, parseISO } from "date-fns";
 import type { DayInfo } from "../../lib/calendarDays";
 
@@ -27,91 +28,93 @@ export default function CalendarGrid({
     <>
       <div className="cal-head">
         <button
-          className="btn link"
+          className="icon-btn"
           onClick={() => onMonthChange(addMonths(month, -1))}
           aria-label="Previous month"
         >
-          ‹
+          <ChevronLeft size={18} />
         </button>
         <h1>{format(month, "MMMM yyyy")}</h1>
         <button
-          className="btn link"
+          className="icon-btn"
           onClick={() => onMonthChange(addMonths(month, 1))}
           aria-label="Next month"
         >
-          ›
+          <ChevronRight size={18} />
         </button>
       </div>
 
-      <div className="cal">
-        {["M", "T", "W", "T", "F", "S", "S"].map((w, i) => (
-          <div key={i} className="cal-wd">
-            {w}
-          </div>
-        ))}
-        {days.map((d) => (
-          <button
-            key={d.date}
-            className={[
-              "cal-day",
-              d.inMonth ? "" : "out",
-              d.period ? "bleed" : "",
-              d.predictedBleed ? "predicted" : "",
-              d.fertile ? "fertile" : "",
-              d.ovulation ? "ovulation" : "",
-              d.off ? "off" : "",
-              d.date === today ? "today" : "",
-              d.date === selected ? "selected" : "",
-            ].join(" ")}
-            onClick={() => onSelect(d.date)}
-          >
-            {d.logged && <i className="log-mark" aria-label="logged" />}
-            <span>{parseISO(d.date).getDate()}</span>
-            {d.pill && (
-              <i
-                className={`dot ${d.pill.taken ? "taken" : d.pill.missed ? "missed" : ""}`}
-              />
-            )}
-          </button>
-        ))}
-      </div>
+      <div className="card cal-card stack">
+        <div className="cal">
+          {["M", "T", "W", "T", "F", "S", "S"].map((w, i) => (
+            <div key={i} className="cal-wd">
+              {w}
+            </div>
+          ))}
+          {days.map((d) => (
+            <button
+              key={d.date}
+              className={[
+                "cal-day",
+                d.inMonth ? "" : "out",
+                d.period ? "bleed" : "",
+                d.predictedBleed ? "predicted" : "",
+                d.fertile ? "fertile" : "",
+                d.ovulation ? "ovulation" : "",
+                d.off ? "off" : "",
+                d.date === today ? "today" : "",
+                d.date === selected ? "selected" : "",
+              ].join(" ")}
+              onClick={() => onSelect(d.date)}
+            >
+              {d.logged && <i className="log-mark" aria-label="logged" />}
+              <span>{parseISO(d.date).getDate()}</span>
+              {d.pill && (
+                <i
+                  className={`dot ${d.pill.taken ? "taken" : d.pill.missed ? "missed" : ""}`}
+                />
+              )}
+            </button>
+          ))}
+        </div>
 
-      <div className="legend small muted">
-        <span>
-          <i className="sw bleed" /> period
-        </span>
-        <span>
-          <i className="sw predicted" /> predicted
-        </span>
-        <span>
-          <i className="log-mark legend-mark" /> logged
-        </span>
-        {pillMode ? (
-          <>
-            {showPills && (
-              <>
-                <span>
-                  <i className="dot taken" /> pill taken
-                </span>
-                <span>
-                  <i className="dot missed" /> not marked
-                </span>
-              </>
-            )}
-            <span>
-              <i className="sw off" /> break
-            </span>
-          </>
-        ) : (
-          <>
-            <span>
-              <i className="sw fertile" /> fertile window
-            </span>
-            <span>
-              <i className="sw ovulation" /> ovulation
-            </span>
-          </>
-        )}
+        <div className="legend small muted">
+          <span>
+            <i className="sw bleed" /> period
+          </span>
+          <span>
+            <i className="sw predicted" /> predicted
+          </span>
+          <span>
+            <i className="log-mark legend-mark" /> logged
+          </span>
+          {pillMode ? (
+            <>
+              {showPills && (
+                <>
+                  <span>
+                    <i className="dot taken" /> pill taken
+                  </span>
+                  <span>
+                    <i className="dot missed" /> not marked
+                  </span>
+                </>
+              )}
+              <span>
+                <i className="sw off" /> break
+              </span>
+            </>
+          ) : (
+            <>
+              <span>
+                <i className="sw fertile" /> fertile window
+              </span>
+              <span>
+                <i className="sw ovulation" /> ovulation
+              </span>
+            </>
+          )}
+        </div>
       </div>
     </>
   );

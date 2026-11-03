@@ -1,11 +1,12 @@
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
+import { Droplet } from "lucide-react";
 import { useState } from "react";
 import { endPeriod, startPeriod } from "../../data/actions";
 import type { PeriodRow } from "../../data/db";
 import { MAX_OPEN_BLEED, periodOn } from "../../lib/cycle";
 import PeriodEditor from "./PeriodEditor";
 
-/** Today: one-tap "Period started" / "Period ended". */
+/** Today tile: one tap "Started today" / "Ended today", plus date editing. */
 export default function PeriodCard({
   ownerId,
   periods,
@@ -36,7 +37,7 @@ export default function PeriodCard({
 
   if (editing) {
     return (
-      <section className="card stack">
+      <section className="card stack span-2">
         <h2>{editing === "new" ? "Log a period" : "Edit period"}</h2>
         <PeriodEditor
           ownerId={ownerId}
@@ -50,52 +51,53 @@ export default function PeriodCard({
   }
 
   return (
-    <section className="card stack period-card">
-      {ongoing ? (
-        <>
-          <div>
-            <p className="muted small">Period</p>
-            <p className="period-day">Day {day}</p>
-          </div>
-          {ongoing.end_date === today ? (
-            <p className="muted small">Ends today ✓</p>
+    <>
+      <section className="tile blk-rose">
+        <div className="tile-icon">
+          <Droplet size={18} />
+        </div>
+        <p className="tile-label">Period</p>
+        <p className="tile-value">{ongoing ? `Day ${day}` : "Not now"}</p>
+        <div className="tile-actions">
+          {ongoing ? (
+            ongoing.end_date === today ? (
+              <p className="tile-note">Ends today ✓</p>
+            ) : (
+              <button
+                className="btn ink sm"
+                onClick={() => endPeriod(ongoing, today)}
+              >
+                It ended
+              </button>
+            )
           ) : (
             <button
-              className="btn bleed"
-              onClick={() => endPeriod(ongoing, today)}
+              className="btn ink sm"
+              onClick={() => startPeriod(ownerId, today)}
             >
-              Period ended today
+              It started
             </button>
           )}
-          <button className="btn link" onClick={() => setEditing(ongoing)}>
-            Change dates
-          </button>
-        </>
-      ) : (
-        <>
           <button
-            className="btn bleed"
-            onClick={() => startPeriod(ownerId, today)}
+            className="btn link xs"
+            onClick={() => setEditing(ongoing ?? "new")}
           >
-            Period started today
-          </button>
-          <button className="btn link" onClick={() => setEditing("new")}>
-            Started another day?
-          </button>
-        </>
-      )}
-
-      {stale && (
-        <div className="card warn small stack">
-          <span>
-            Your period from {format(parseISO(stale.start_date), "d MMM")} has
-            no end date. When did it end?
-          </span>
-          <button className="btn" onClick={() => setEditing(stale)}>
-            Set end date
+            {ongoing ? "Change dates" : "Another day"}
           </button>
         </div>
+      </section>
+
+      {stale && (
+        <section className="card warn span-2 row-between small">
+          <span>
+            Your period from {format(parseISO(stale.start_date), "d MMM")} has
+            no end date.
+          </span>
+          <button className="btn ink sm" onClick={() => setEditing(stale)}>
+            Set end
+          </button>
+        </section>
       )}
-    </section>
+    </>
   );
 }

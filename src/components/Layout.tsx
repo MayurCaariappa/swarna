@@ -36,61 +36,23 @@ export default function Layout() {
           </PartnerDataProvider>
         )}
       </main>
-      <nav className="tabbar">
+      <nav className="tabbar" aria-label="Main">
         {isOwner ? (
           <>
-            <NavLink to="/today">
-              <TabIcon d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 4v5l3 2" />
-              Today
-            </NavLink>
-            <NavLink to="/calendar">
-              <TabIcon d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" />
-              Calendar
-            </NavLink>
-            <NavLink to="/stats">
-              <TabIcon d="M5 20V11M12 20V5M19 20v-6" />
-              Stats
-            </NavLink>
+            <NavLink to="/today">Today</NavLink>
+            <NavLink to="/calendar">Calendar</NavLink>
+            <NavLink to="/stats">Stats</NavLink>
           </>
         ) : (
           <>
             <NavLink to="/partner" end>
-              <TabIcon d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10Z" />
               Home
             </NavLink>
-            <NavLink to="/partner/calendar">
-              <TabIcon d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" />
-              Calendar
-            </NavLink>
-            <NavLink to="/partner/periods">
-              <TabIcon d="M12 3c-3 4.5-5.5 8-5.5 11a5.5 5.5 0 0 0 11 0c0-3-2.5-6.5-5.5-11z" />
-              Periods
-            </NavLink>
+            <NavLink to="/partner/calendar">Calendar</NavLink>
+            <NavLink to="/partner/periods">Periods</NavLink>
           </>
         )}
-        <NavLink to="/settings">
-          <TabIcon d="M4 6h16M4 12h16M4 18h16" />
-          Settings
-        </NavLink>
       </nav>
     </div>
-  );
-}
-
-function TabIcon({ d }: { d: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="24"
-      height="24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d={d} />
-    </svg>
   );
 }

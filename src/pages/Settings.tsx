@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import RemindersSection from "../components/RemindersSection";
 import TrackingSection from "../components/TrackingSection";
@@ -10,10 +10,17 @@ import type { InviteCode, SharingSettings } from "../lib/types";
 
 export default function Settings() {
   const { profile, session, signOut } = useAuth();
+  const navigate = useNavigate();
   const isOwner = profile?.role === "owner";
 
   return (
     <div className="stack">
+      <button
+        className="btn link back"
+        onClick={() => (history.length > 1 ? navigate(-1) : navigate("/"))}
+      >
+        ‹ Back
+      </button>
       <h1>Settings</h1>
 
       <section className="card stack">

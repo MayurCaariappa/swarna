@@ -55,7 +55,7 @@ export default function WeightChart({
             </text>
           </g>
         ))}
-        <path d={path} className="line-gold" />
+        <path d={path} className="line-lilac" />
         {points.map((p, i) => (
           <g key={p.date}>
             <circle

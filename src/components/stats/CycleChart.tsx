@@ -33,7 +33,7 @@ export default function CycleChart({
           <i className="sw chart-bleed" /> bleed days
         </span>
         <span>
-          <i className="sw chart-gold" /> rest of cycle
+          <i className="sw chart-lilac" /> rest of cycle
         </span>
         {average !== null && (
           <span>
@@ -76,7 +76,7 @@ export default function CycleChart({
             <g key={c.start} className={i === sel ? "bar on" : "bar"}>
               {/* rest of cycle: rounded at the top */}
               <path
-                className="fill-gold"
+                className="fill-lilac"
                 d={roundedTop(
                   x,
                   y(c.length),
