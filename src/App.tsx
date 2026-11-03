@@ -4,6 +4,7 @@ import Layout from "./components/Layout";
 import UpdateToast from "./components/UpdateToast";
 import { supabaseConfigured } from "./lib/supabase";
 import Calendar from "./pages/Calendar";
+import Export from "./pages/Export";
 import InstallGuide from "./pages/InstallGuide";
 import Join from "./pages/Join";
 import Login from "./pages/Login";
@@ -80,6 +81,9 @@ function AppRoutes() {
         <Route path="/settings" element={<Settings />} />
       </Route>
       <Route path="/install" element={<InstallGuide />} />
+      {profile.role === "owner" && (
+        <Route path="/export" element={<Export />} />
+      )}
       <Route path="*" element={<Navigate to={home} replace />} />
     </Routes>
   );

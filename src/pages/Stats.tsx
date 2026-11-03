@@ -1,5 +1,6 @@
 import { format, parseISO } from "date-fns";
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import CycleChart from "../components/stats/CycleChart";
 import WeightChart from "../components/stats/WeightChart";
@@ -218,6 +219,10 @@ export default function Stats() {
           <WeightChart points={weights} />
         </section>
       )}
+
+      <Link to="/export" className="btn">
+        Export for your doctor
+      </Link>
 
       <p className="disclaimer">
         Stats describe what you've logged — they're not a diagnosis.

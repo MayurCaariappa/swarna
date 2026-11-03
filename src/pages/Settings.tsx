@@ -32,6 +32,12 @@ export default function Settings() {
 
       <section className="card stack">
         <h2>App</h2>
+        {isOwner && (
+          <Link to="/export" className="row-link">
+            Export for your doctor (PDF / CSV)
+            <span aria-hidden>›</span>
+          </Link>
+        )}
         <Link to="/install" className="row-link">
           {isStandalone()
             ? "Installed ✓ — how to install on another phone"

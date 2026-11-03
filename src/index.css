@@ -1090,3 +1090,9 @@ details summary {
 details[open] summary {
   margin-bottom: 8px;
 }
+a.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
