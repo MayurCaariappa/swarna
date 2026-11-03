@@ -1,7 +1,6 @@
 # Swarna
 
 A private period & pill tracker for two. Installable web app (PWA): Vite + React + TypeScript, Supabase, Vercel.
-See [CLAUDE.md](CLAUDE.md) for the full product brief.
 
 ## Run it on your computer
 
@@ -29,9 +28,9 @@ Vercel builds every push to `main`. Its environment variables must include the s
 
 ## Useful commands
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Local dev server |
-| `npm run build` | Type-check + production build into `dist/` |
+| Command           | What it does                                               |
+| ----------------- | ---------------------------------------------------------- |
+| `npm run dev`     | Local dev server                                           |
+| `npm run build`   | Type-check + production build into `dist/`                 |
 | `npm run preview` | Serve the production build locally (service worker active) |
-| `npm run icons` | Regenerate app icons from `public/logo.svg` |
+| `npm run icons`   | Regenerate app icons from `public/logo.svg`                |
