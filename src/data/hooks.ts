@@ -28,3 +28,15 @@ export function usePillLogs(
     return map;
   }, [ownerId, from, to]);
 }
+
+/** All her logged periods, oldest first (deleted ones left out). */
+export function usePeriods(ownerId: string | undefined) {
+  return useLiveQuery(async () => {
+    if (!ownerId) return [];
+    const rows = await db.periods
+      .where("[owner_id+start_date]")
+      .between([ownerId, ""], [ownerId, "￿"])
+      .toArray();
+    return rows.filter((r) => !r.deleted);
+  }, [ownerId]);
+}

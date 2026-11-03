@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import Disclaimer from "../components/Disclaimer";
+import NaturalToday from "../components/period/NaturalToday";
+import PeriodCard from "../components/period/PeriodCard";
 import PackSetup from "../components/pill/PackSetup";
 import PillToday from "../components/pill/PillToday";
-import { useTracking } from "../data/hooks";
+import { usePeriods, useTracking } from "../data/hooks";
 import { useToday } from "../lib/useToday";
 
 function greeting() {
@@ -16,6 +18,7 @@ export default function Today() {
   const ownerId = session!.user.id;
   const today = useToday();
   const tracking = useTracking(ownerId);
+  const periods = usePeriods(ownerId);
 
   return (
     <div className="stack">
@@ -30,18 +33,17 @@ export default function Today() {
         {greeting()}, {profile?.display_name}
       </h1>
 
-      {tracking === undefined ? null : tracking?.mode === "natural" ? (
-        <section className="card hero">
-          <p className="muted">Natural cycle</p>
-          <p className="hero-text">Cycle tracking</p>
-          <p className="muted small">
-            Period logging and cycle predictions are coming in the next step.
-            The first cycles after stopping the pill can be irregular, so
-            predictions will take a few cycles to settle.
-          </p>
-        </section>
+      {tracking === undefined ||
+      periods === undefined ? null : tracking?.mode === "natural" ? (
+        <>
+          <NaturalToday tracking={tracking} periods={periods} today={today} />
+          <PeriodCard ownerId={ownerId} periods={periods} today={today} />
+        </>
       ) : tracking?.pack_start_date ? (
-        <PillToday ownerId={ownerId} tracking={tracking} today={today} />
+        <>
+          <PillToday ownerId={ownerId} tracking={tracking} today={today} />
+          <PeriodCard ownerId={ownerId} periods={periods} today={today} />
+        </>
       ) : (
         <PackSetup ownerId={ownerId} today={today} />
       )}

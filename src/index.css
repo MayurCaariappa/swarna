@@ -657,3 +657,166 @@ textarea {
     box-shadow: 0 0 0 10px var(--gold-soft);
   }
 }
+
+/* ── Periods ── */
+:root {
+  --fertile: #5fb3a6;
+  --fertile-soft: rgba(95, 179, 166, 0.16);
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --fertile: #2e8a7c;
+    --fertile-soft: rgba(46, 138, 124, 0.12);
+  }
+}
+.btn.bleed {
+  background: var(--bleed);
+  border-color: var(--bleed);
+  color: #fff;
+}
+.btn.link.danger {
+  color: var(--danger);
+}
+.period-card {
+  gap: 8px;
+}
+.period-day {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--bleed);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.chip {
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.row-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+input:disabled {
+  opacity: 0.45;
+}
+
+/* ── Calendar ── */
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cal-head h1 {
+  font-size: 1.35rem;
+}
+.cal-head .btn.link {
+  font-size: 1.6rem;
+  padding: 0 12px;
+}
+.cal {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.cal-wd {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--muted);
+  padding-bottom: 4px;
+}
+.cal-day {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: none;
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.cal-day.out {
+  opacity: 0.35;
+}
+.cal-day.off {
+  color: var(--muted);
+}
+.cal-day.fertile {
+  background: var(--fertile-soft);
+}
+.cal-day.ovulation {
+  border-color: var(--fertile);
+}
+.cal-day.predicted {
+  border: 1.5px dashed var(--bleed);
+  background: var(--bleed-soft);
+}
+.cal-day.bleed {
+  background: var(--bleed);
+  color: #fff;
+}
+.cal-day.today span {
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.cal-day.selected {
+  box-shadow: 0 0 0 2px var(--gold);
+}
+.dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+}
+.dot.taken {
+  background: var(--gold);
+}
+.dot.missed {
+  border-color: var(--danger);
+  background: var(--danger);
+}
+.cal-day.bleed .dot {
+  border-color: #fff;
+}
+.cal-day.bleed .dot.taken {
+  background: #fff;
+}
+.sw {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}
+.sw.bleed {
+  background: var(--bleed);
+}
+.sw.predicted {
+  border: 1.5px dashed var(--bleed);
+  background: var(--bleed-soft);
+}
+.sw.fertile {
+  background: var(--fertile-soft);
+  border: 1px solid var(--fertile-soft);
+}
+.sw.ovulation {
+  border: 1.5px solid var(--fertile);
+}
+.sw.off {
+  border: 1px dashed var(--border);
+}

@@ -101,3 +101,14 @@ export function expectedBleed(info: PackDayInfo, cfg: PackConfig) {
   const start = addDays(info.breakStart, offset);
   return { start, end: addDays(start, length - 1) };
 }
+
+/** Is this day inside the expected withdrawal-bleed window of its pack? */
+export function isPredictedBleedDay(
+  cfg: PackConfig,
+  info: PackDayInfo,
+): boolean {
+  if (info.kind !== "off") return false;
+  const [start, length] = bleedWindow(cfg);
+  const offIndex = info.number - 1;
+  return offIndex >= start && offIndex < start + length;
+}

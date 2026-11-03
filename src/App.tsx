@@ -3,6 +3,7 @@ import { useAuth } from "./auth/AuthProvider";
 import Layout from "./components/Layout";
 import UpdateToast from "./components/UpdateToast";
 import { supabaseConfigured } from "./lib/supabase";
+import Calendar from "./pages/Calendar";
 import InstallGuide from "./pages/InstallGuide";
 import Join from "./pages/Join";
 import Login from "./pages/Login";
@@ -60,7 +61,10 @@ function AppRoutes() {
     <Routes>
       <Route element={<Layout />}>
         {profile.role === "owner" && (
-          <Route path="/today" element={<Today />} />
+          <>
+            <Route path="/today" element={<Today />} />
+            <Route path="/calendar" element={<Calendar />} />
+          </>
         )}
         {profile.role === "partner" && (
           <Route path="/partner" element={<PartnerHome />} />

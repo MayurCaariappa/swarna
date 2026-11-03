@@ -14,9 +14,11 @@ import {
   type SupabaseClient,
 } from "npm:@supabase/supabase-js@2.118.0";
 import webpush from "npm:web-push@3.6.7";
+import { predictNextStart } from "../_shared/cycle.ts";
 import {
   addDays,
   bleedStartOffDay,
+  daysBetween,
   localNow,
   packDay,
   toMinutes,
@@ -24,7 +26,8 @@ import {
 
 const WINDOW = 10; // minutes: a reminder is still sent if cron runs up to 10 min late
 const PILL_STAGES = [0, 30, 60]; // first reminder, then +30 and +60 until taken
-const BLEED_NOTICE_TIME = 10 * 60; // 10:00 local for "bleed expected in 2 days"
+const BLEED_NOTICE_TIME = 10 * 60; // 10:00 local for "bleed expected in 2 days" / "late"
+const LATE_DAYS = 3; // "bleed late" after this many days past the expected start
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -110,10 +113,8 @@ async function runSchedule(db: SupabaseClient) {
   const { data: owners, error } = await db
     .from("tracking_settings")
     .select(
-      "owner_id, mode, pack_start_date, active_days, break_days, reminder_time, profiles!inner(display_name, timezone)",
-    )
-    .eq("mode", "pill")
-    .not("pack_start_date", "is", null);
+      "owner_id, mode, pack_start_date, active_days, break_days, reminder_time, natural_since, profiles!inner(display_name, timezone)",
+    );
   if (error) throw error;
 
   let sent = 0;
@@ -124,6 +125,14 @@ async function runSchedule(db: SupabaseClient) {
     };
     const name = profile.display_name || "She";
     const now = localNow(profile.timezone);
+
+    // Natural-cycle mode: only the "late" check applies.
+    if (t.mode === "natural") {
+      if (await checkNaturalLate(db, t.owner_id, t.natural_since, now)) sent++;
+      continue;
+    }
+    if (!t.pack_start_date) continue;
+
     const today = packDay(
       t.pack_start_date,
       t.active_days,
@@ -225,6 +234,31 @@ async function runSchedule(db: SupabaseClient) {
       }
     }
 
+    // 3b. No bleed logged 3+ days after the expected start of this break → her.
+    if (
+      bleedDay &&
+      today.kind === "off" &&
+      today.number === bleedDay + LATE_DAYS &&
+      inWindow(now.minutes, BLEED_NOTICE_TIME)
+    ) {
+      const breakStart = addDays(now.date, -(today.number - 1));
+      const { count } = await db
+        .from("periods")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_id", t.owner_id)
+        .eq("deleted", false)
+        .gte("start_date", breakStart);
+      if (
+        !count &&
+        (await sendOnce(t.owner_id, "bleed-late", breakStart, {
+          title: "No bleed logged yet this break",
+          body: "If it has started, tap to log it. Predictions are estimates.",
+          url: "/today",
+        }))
+      )
+        sent++;
+    }
+
     // 4. Optional: tell the partner if the pill isn't marked by her chosen time.
     if (
       link &&
@@ -252,6 +286,56 @@ async function runSchedule(db: SupabaseClient) {
   return sent;
 }
 
+/** Natural mode: period 3+ days later than predicted → tell her once. */
+async function checkNaturalLate(
+  db: SupabaseClient,
+  ownerId: string,
+  naturalSince: string | null,
+  now: { date: string; minutes: number },
+) {
+  if (!inWindow(now.minutes, BLEED_NOTICE_TIME)) return false;
+  let q = db
+    .from("periods")
+    .select("start_date, end_date")
+    .eq("owner_id", ownerId)
+    .eq("deleted", false)
+    .order("start_date", { ascending: true });
+  if (naturalSince) q = q.gte("start_date", naturalSince);
+  const { data: periods } = await q;
+  const next = predictNextStart(periods ?? []);
+  if (!next || daysBetween(next, now.date) !== LATE_DAYS) return false;
+  return sendOnce(ownerId, "bleed-late", next, {
+    title: `Period ${LATE_DAYS} days later than predicted`,
+    body: "Predictions are estimates. If it has started, tap to log it.",
+    url: "/today",
+  });
+}
+
+/** Instant: she logged "period started" → tell the partner (if periods are shared). */
+async function notifyPeriodStarted(periodId: string) {
+  const { data: period } = await admin
+    .from("periods")
+    .select("id, owner_id, start_date, deleted")
+    .eq("id", periodId)
+    .maybeSingle();
+  if (!period || period.deleted) return 0;
+
+  const [{ data: link }, { data: sharing }, { data: owner }] = await Promise.all([
+    admin.from("partner_links").select("partner_id").eq("owner_id", period.owner_id).maybeSingle(),
+    admin.from("sharing_settings").select("share_periods").eq("owner_id", period.owner_id).maybeSingle(),
+    admin.from("profiles").select("display_name").eq("id", period.owner_id).maybeSingle(),
+  ]);
+  if (!link || !sharing?.share_periods) return 0;
+
+  const name = owner?.display_name || "Your partner";
+  const ok = await sendOnce(link.partner_id, "period-started", period.id, {
+    title: `${name}'s period started`,
+    body: "Logged just now. Maybe extra care today 💛",
+    url: "/partner",
+  });
+  return ok ? 1 : 0;
+}
+
 // ───────────── entry point ─────────────
 
 Deno.serve(async (req) => {
@@ -267,6 +351,11 @@ Deno.serve(async (req) => {
     // Cron call
     const cronSecret = Deno.env.get("CRON_SECRET");
     if (cronSecret && req.headers.get("x-cron-secret") === cronSecret) {
+      const body = await req.json().catch(() => ({}));
+      // From the periods trigger (migration 4)
+      if (body?.event === "period-started" && body.period_id) {
+        return json({ ok: true, sent: await notifyPeriodStarted(body.period_id) });
+      }
       const sent = await runSchedule(admin);
       return json({ ok: true, sent });
     }

@@ -15,6 +15,7 @@ export interface TrackingRow {
   active_days: number;
   break_days: number;
   reminder_time: string; // HH:MM or HH:MM:SS
+  natural_since: string | null; // yyyy-MM-dd, set when switching to natural mode
   updated_at: string;
   dirty: 0 | 1;
 }
@@ -28,6 +29,16 @@ export interface PillLogRow {
   dirty: 0 | 1;
 }
 
+export interface PeriodRow {
+  id: string;
+  owner_id: string;
+  start_date: string; // yyyy-MM-dd
+  end_date: string | null; // null = still bleeding
+  deleted: boolean;
+  updated_at: string;
+  dirty: 0 | 1;
+}
+
 interface MetaRow {
   key: string;
   value: string;
@@ -36,6 +47,7 @@ interface MetaRow {
 export const db = new Dexie("swarna") as Dexie & {
   tracking: EntityTable<TrackingRow, "owner_id">;
   pillLogs: Table<PillLogRow, [string, string]>;
+  periods: EntityTable<PeriodRow, "id">;
   meta: EntityTable<MetaRow, "key">;
 };
 
@@ -43,6 +55,10 @@ db.version(1).stores({
   tracking: "owner_id, dirty",
   pillLogs: "[owner_id+date], owner_id, dirty",
   meta: "key",
+});
+
+db.version(2).stores({
+  periods: "id, owner_id, [owner_id+start_date], dirty",
 });
 
 export const DEFAULT_TRACKING: Omit<
@@ -54,6 +70,7 @@ export const DEFAULT_TRACKING: Omit<
   active_days: 21,
   break_days: 7,
   reminder_time: "21:00",
+  natural_since: null,
 };
 
 /** Wipe everything stored on this phone (used on sign-out). */

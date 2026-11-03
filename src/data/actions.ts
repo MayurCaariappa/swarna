@@ -1,4 +1,4 @@
-import { DEFAULT_TRACKING, db, type TrackingRow } from "./db";
+import { DEFAULT_TRACKING, db, type PeriodRow, type TrackingRow } from "./db";
 import { requestSync } from "./sync";
 
 // Every write goes to the phone first (instant, works offline), then syncs.
@@ -51,5 +51,58 @@ export async function saveTracking(
       dirty: 1,
     });
   });
+  requestSync();
+}
+
+// ── Periods ──
+
+function writePeriod(row: Omit<PeriodRow, "updated_at" | "dirty">) {
+  return db.periods.put({
+    ...row,
+    updated_at: new Date().toISOString(),
+    dirty: 1,
+  });
+}
+
+/** One tap: "Period started" (today, or another day). */
+export async function startPeriod(ownerId: string, date: string) {
+  await writePeriod({
+    id: crypto.randomUUID(),
+    owner_id: ownerId,
+    start_date: date,
+    end_date: null,
+    deleted: false,
+  });
+  requestSync();
+}
+
+/** One tap: "Period ended". */
+export async function endPeriod(period: PeriodRow, date: string) {
+  await writePeriod({
+    ...period,
+    end_date: date < period.start_date ? period.start_date : date,
+  });
+  requestSync();
+}
+
+/** Create or edit a period with explicit dates (calendar editor). */
+export async function savePeriod(
+  ownerId: string,
+  id: string | null,
+  start: string,
+  end: string | null,
+) {
+  await writePeriod({
+    id: id ?? crypto.randomUUID(),
+    owner_id: ownerId,
+    start_date: start,
+    end_date: end,
+    deleted: false,
+  });
+  requestSync();
+}
+
+export async function deletePeriod(period: PeriodRow) {
+  await writePeriod({ ...period, deleted: true });
   requestSync();
 }

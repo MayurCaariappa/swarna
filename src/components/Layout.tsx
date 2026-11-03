@@ -31,10 +31,16 @@ export default function Layout() {
       </main>
       <nav className="tabbar">
         {isOwner ? (
-          <NavLink to="/today">
-            <TabIcon d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 4v5l3 2" />
-            Today
-          </NavLink>
+          <>
+            <NavLink to="/today">
+              <TabIcon d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 4v5l3 2" />
+              Today
+            </NavLink>
+            <NavLink to="/calendar">
+              <TabIcon d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" />
+              Calendar
+            </NavLink>
+          </>
         ) : (
           <NavLink to="/partner">
             <TabIcon d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10Z" />

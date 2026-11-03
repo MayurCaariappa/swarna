@@ -23,7 +23,11 @@ export default function TrackingSection() {
       )
     )
       return;
-    save({ mode });
+    save(
+      mode === "natural"
+        ? { mode, natural_since: new Date().toLocaleDateString("en-CA") }
+        : { mode },
+    );
   }
 
   const num = (v: string, min: number, max: number) => {

@@ -30,7 +30,7 @@ const SPECS: Spec[] = [
     local: db.tracking,
     onConflict: "owner_id",
     columns:
-      "owner_id, mode, pack_start_date, active_days, break_days, reminder_time, updated_at, synced_at",
+      "owner_id, mode, pack_start_date, active_days, break_days, reminder_time, natural_since, updated_at, synced_at",
     key: (r) => r.owner_id,
   },
   {
@@ -39,6 +39,14 @@ const SPECS: Spec[] = [
     onConflict: "owner_id,date",
     columns: "owner_id, date, taken_at, deleted, updated_at, synced_at",
     key: (r) => [r.owner_id, r.date],
+  },
+  {
+    remote: "periods",
+    local: db.periods,
+    onConflict: "id",
+    columns:
+      "id, owner_id, start_date, end_date, deleted, updated_at, synced_at",
+    key: (r) => r.id,
   },
 ];
 

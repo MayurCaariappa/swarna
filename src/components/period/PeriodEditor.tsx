@@ -1,0 +1,113 @@
+import { useState } from "react";
+import { deletePeriod, savePeriod } from "../../data/actions";
+import type { PeriodRow } from "../../data/db";
+import { periodEnd } from "../../lib/cycle";
+
+interface Props {
+  ownerId: string;
+  period: PeriodRow | null; // null = new
+  defaultStart?: string;
+  all: PeriodRow[];
+  today: string;
+  onDone: () => void;
+}
+
+/** Add or edit a period with explicit start / end dates. */
+export default function PeriodEditor({
+  ownerId,
+  period,
+  defaultStart,
+  all,
+  today,
+  onDone,
+}: Props) {
+  const [start, setStart] = useState(
+    period?.start_date ?? defaultStart ?? today,
+  );
+  const [ongoing, setOngoing] = useState(
+    period ? period.end_date === null : (defaultStart ?? today) >= today,
+  );
+  const [end, setEnd] = useState(period?.end_date ?? defaultStart ?? today);
+
+  const finalEnd = ongoing ? null : end;
+  const overlap = all.find(
+    (p) =>
+      p.id !== period?.id &&
+      p.start_date <= (finalEnd ?? today) &&
+      start <= periodEnd(p, today),
+  );
+  const error = !start
+    ? "Pick a start date"
+    : start > today
+      ? "Start can't be in the future"
+      : finalEnd && finalEnd < start
+        ? "End must be on or after the start"
+        : overlap
+          ? "This overlaps another logged period"
+          : "";
+
+  async function save() {
+    if (error) return;
+    await savePeriod(ownerId, period?.id ?? null, start, finalEnd);
+    onDone();
+  }
+
+  async function remove() {
+    if (!period || !confirm("Delete this period?")) return;
+    await deletePeriod(period);
+    onDone();
+  }
+
+  return (
+    <div className="stack">
+      <div className="row">
+        <label>
+          Started
+          <input
+            type="date"
+            value={start}
+            max={today}
+            onChange={(e) => setStart(e.target.value)}
+          />
+        </label>
+        <label>
+          Ended
+          <input
+            type="date"
+            value={end}
+            min={start}
+            disabled={ongoing}
+            onChange={(e) => setEnd(e.target.value)}
+          />
+        </label>
+      </div>
+      <label className="toggle-row">
+        <span>Still bleeding</span>
+        <input
+          type="checkbox"
+          className="switch"
+          checked={ongoing}
+          onChange={(e) => setOngoing(e.target.checked)}
+        />
+      </label>
+      {error && <p className="error">{error}</p>}
+      <div className="row">
+        <button
+          className="btn primary"
+          disabled={Boolean(error)}
+          onClick={save}
+        >
+          Save
+        </button>
+        <button className="btn" onClick={onDone}>
+          Cancel
+        </button>
+      </div>
+      {period && (
+        <button className="btn link danger" onClick={remove}>
+          Delete this period
+        </button>
+      )}
+    </div>
+  );
+}
