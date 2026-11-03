@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { clearLocalData } from "../data/db";
 import { supabase, supabaseConfigured } from "../lib/supabase";
 import type { PartnerLink, Profile } from "../lib/types";
 
@@ -152,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       signOut: async () => {
         if (uid) localStorage.removeItem(cacheKey(uid));
+        await clearLocalData(); // nothing private stays on the phone
         await supabase.auth.signOut();
       },
     }),

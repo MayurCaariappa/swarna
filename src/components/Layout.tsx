@@ -1,11 +1,19 @@
+import { useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
+import { startSync } from "../data/sync";
 import { useOnline } from "../lib/useOnline";
 
 export default function Layout() {
-  const { profile } = useAuth();
+  const { profile, session } = useAuth();
   const online = useOnline();
   const isOwner = profile?.role === "owner";
+  const uid = session?.user.id;
+
+  // Keep the phone's data and Supabase in sync while the app is open.
+  useEffect(() => {
+    if (isOwner && uid) return startSync(uid);
+  }, [isOwner, uid]);
 
   return (
     <div className="app">

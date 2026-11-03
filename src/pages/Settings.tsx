@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
+import TrackingSection from "../components/TrackingSection";
+import { useSyncStatus } from "../data/sync";
 import { isStandalone } from "../lib/platform";
 import { errorMessage, supabase } from "../lib/supabase";
 import type { InviteCode, SharingSettings } from "../lib/types";
@@ -22,6 +24,7 @@ export default function Settings() {
         </p>
       </section>
 
+      {isOwner && <TrackingSection />}
       <PartnerSection />
       {isOwner && <SharingSection />}
 
@@ -33,6 +36,7 @@ export default function Settings() {
             : "Install on your Home Screen"}
           <span aria-hidden>›</span>
         </Link>
+        {isOwner && <SyncLine />}
       </section>
 
       <FeedbackSection />
@@ -284,4 +288,22 @@ function FeedbackSection() {
       </button>
     </form>
   );
+}
+
+function SyncLine() {
+  const { state, lastSyncedAt, pending } = useSyncStatus();
+  const online = typeof navigator === "undefined" || navigator.onLine;
+  const text =
+    state === "syncing"
+      ? "Syncing…"
+      : state === "error"
+        ? "Couldn't sync — will retry automatically"
+        : pending
+          ? online
+            ? "Waiting to sync"
+            : "Saved on this phone — will sync when online"
+          : lastSyncedAt
+            ? `All changes synced · ${new Date(lastSyncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+            : "Saved on this phone";
+  return <p className="muted small">{text}</p>;
 }
