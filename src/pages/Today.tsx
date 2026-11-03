@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import Disclaimer from "../components/Disclaimer";
+import WelcomeCard from "../components/WelcomeCard";
 import LogTodayCard from "../components/log/LogTodayCard";
 import NaturalToday from "../components/period/NaturalToday";
 import PeriodCard from "../components/period/PeriodCard";
@@ -29,6 +30,8 @@ export default function Today() {
       <h1>
         {greeting()}, {profile?.display_name}
       </h1>
+
+      <WelcomeCard />
 
       {tracking === undefined ||
       periods === undefined ? null : tracking?.mode === "natural" ? (

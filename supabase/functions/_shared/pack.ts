@@ -70,3 +70,28 @@ export const toMinutes = (hhmm: string) => {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;
 };
+
+/**
+ * Her usual bleed start as a 1-based off-day number, learned from bleeds logged
+ * around breaks (last 6, need ≥ 2). Mirrors calibrateBleed in src/lib/pill.ts.
+ */
+export function calibratedBleedOffDay(
+  packStart: string,
+  active: number,
+  brk: number,
+  periods: { start_date: string }[],
+): number | null {
+  const fallback = bleedStartOffDay(brk);
+  if (fallback === null) return null;
+  const offsets: number[] = [];
+  for (const p of periods) {
+    const pd = packDay(packStart, active, brk, p.start_date);
+    if (pd.kind === "off") offsets.push(pd.number - 1);
+    else if (pd.kind === "active" && pd.number > active - 3) offsets.push(0);
+  }
+  if (offsets.length < 2) return fallback;
+  const s = offsets.slice(-6).sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  const median = s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+  return Math.min(median, brk - 1) + 1;
+}

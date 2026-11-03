@@ -1,10 +1,16 @@
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { useAuth } from "../../auth/AuthProvider";
 import Disclaimer from "../../components/Disclaimer";
+import WelcomeCard from "../../components/WelcomeCard";
 import LogSummary from "../../components/log/LogSummary";
 import { greeting } from "../../lib/greeting";
 import { cycleDay, naturalPeriods, periodOn, predict } from "../../lib/cycle";
-import { nextPillBleed, packDay, type PackConfig } from "../../lib/pill";
+import {
+  calibrateBleed,
+  nextPillBleed,
+  packDay,
+  type PackConfig,
+} from "../../lib/pill";
 import { BLEEDING, naturalPhase, pillPhase } from "../../lib/phase";
 import { usePartnerData } from "../../partner/PartnerData";
 
@@ -56,11 +62,14 @@ export default function PartnerHome() {
 
   const cfg: PackConfig | null =
     tracking?.mode === "pill" && tracking.pack_start_date
-      ? {
-          packStart: tracking.pack_start_date,
-          activeDays: tracking.active_days,
-          breakDays: tracking.break_days,
-        }
+      ? calibrateBleed(
+          {
+            packStart: tracking.pack_start_date,
+            activeDays: tracking.active_days,
+            breakDays: tracking.break_days,
+          },
+          periods,
+        )
       : null;
   const pd = cfg ? packDay(cfg, todayDate) : null;
   const prediction =
@@ -94,6 +103,8 @@ export default function PartnerHome() {
   return (
     <div className="stack">
       {header}
+
+      <WelcomeCard />
 
       {nothingShared && (
         <section className="card">

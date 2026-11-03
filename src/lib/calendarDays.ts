@@ -8,6 +8,7 @@ import {
 } from "date-fns";
 import { futureCycles, naturalPeriods, periodOn, predict } from "./cycle";
 import {
+  calibrateBleed,
   isPredictedBleedDay,
   packDay,
   toISODate,
@@ -76,11 +77,14 @@ export function buildMonthDays<P extends PeriodLike>(
 
   const cfg: PackConfig | null =
     tracking?.mode === "pill" && tracking.pack_start_date
-      ? {
-          packStart: tracking.pack_start_date,
-          activeDays: tracking.active_days,
-          breakDays: tracking.break_days,
-        }
+      ? calibrateBleed(
+          {
+            packStart: tracking.pack_start_date,
+            activeDays: tracking.active_days,
+            breakDays: tracking.break_days,
+          },
+          periods,
+        )
       : null;
 
   const out: DayInfo<P>[] = [];

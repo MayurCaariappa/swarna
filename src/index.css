@@ -1096,3 +1096,17 @@ a.btn {
   justify-content: center;
   text-align: center;
 }
+
+/* ── Welcome ── */
+.card.welcome {
+  border-color: var(--gold);
+  background: var(--gold-soft);
+}
+.welcome-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.95rem;
+}

@@ -1,5 +1,7 @@
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
+import CycleChart from "../../components/stats/CycleChart";
 import { cycleLengths } from "../../lib/cycle";
+import { completedCycles, symptomPatterns } from "../../lib/stats";
 import { usePartnerData } from "../../partner/PartnerData";
 
 const len = (start: string, end: string) =>
@@ -11,7 +13,7 @@ const avg = (xs: number[]) =>
 
 /** "Periods" tab: every logged bleed with start, end, length, and averages. */
 export default function PartnerHistory() {
-  const { ownerName, sharing, periods } = usePartnerData();
+  const { ownerName, sharing, periods, logs } = usePartnerData();
 
   if (!sharing?.share_periods) {
     return (
@@ -29,6 +31,15 @@ export default function PartnerHistory() {
   const ended = periods.filter((p) => p.end_date);
   const avgBleed = avg(ended.map((p) => len(p.start_date, p.end_date!)));
   const avgCycle = avg(cycleLengths(periods));
+  const cycles = completedCycles(periods);
+  // Only symptoms she shares reach this phone; empty when not shared.
+  const patterns = symptomPatterns(
+    periods,
+    Object.values(logs ?? {}).map((l) => ({
+      date: l.date,
+      symptoms: l.symptoms ?? [],
+    })),
+  ).filter((p) => p.from !== null);
   const newestFirst = [...periods].reverse();
 
   return (
@@ -53,6 +64,33 @@ export default function PartnerHistory() {
           <p className="muted small">avg cycle</p>
         </div>
       </section>
+
+      {cycles.length > 0 && (
+        <section className="card stack">
+          <h2>Recent cycles</h2>
+          <CycleChart cycles={cycles} average={avgCycle} />
+        </section>
+      )}
+
+      {patterns.length > 0 && (
+        <section className="card stack">
+          <h2>Patterns</h2>
+          {patterns.map((p) => (
+            <p key={p.symptom} className="small">
+              <strong>{p.label}</strong>{" "}
+              <span className="muted">
+                usually on{" "}
+                {p.from === p.to ? `day ${p.from}` : `days ${p.from}–${p.to}`}{" "}
+                of her cycle
+              </span>
+            </p>
+          ))}
+          <p className="muted small">
+            Day 1 is the first day of bleeding. Handy for knowing when to be
+            extra supportive.
+          </p>
+        </section>
+      )}
 
       {newestFirst.length === 0 ? (
         <section className="card">

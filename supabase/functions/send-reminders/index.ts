@@ -17,7 +17,7 @@ import webpush from "npm:web-push@3.6.7";
 import { predictNextStart } from "../_shared/cycle.ts";
 import {
   addDays,
-  bleedStartOffDay,
+  calibratedBleedOffDay,
   daysBetween,
   localNow,
   packDay,
@@ -196,7 +196,20 @@ async function runSchedule(db: SupabaseClient) {
     }
 
     // 3. Withdrawal bleed expected in 2 days → her, and partner if periods are shared.
-    const bleedDay = bleedStartOffDay(t.break_days);
+    // When her bleed usually starts (learned from her logged bleeds).
+    const { data: recentPeriods } = await db
+      .from("periods")
+      .select("start_date")
+      .eq("owner_id", t.owner_id)
+      .eq("deleted", false)
+      .gte("start_date", addDays(now.date, -200))
+      .order("start_date", { ascending: true });
+    const bleedDay = calibratedBleedOffDay(
+      t.pack_start_date,
+      t.active_days,
+      t.break_days,
+      recentPeriods ?? [],
+    );
     const inTwo = packDay(
       t.pack_start_date,
       t.active_days,
@@ -320,11 +333,24 @@ async function notifyPeriodStarted(periodId: string) {
     .maybeSingle();
   if (!period || period.deleted) return 0;
 
-  const [{ data: link }, { data: sharing }, { data: owner }] = await Promise.all([
-    admin.from("partner_links").select("partner_id").eq("owner_id", period.owner_id).maybeSingle(),
-    admin.from("sharing_settings").select("share_periods").eq("owner_id", period.owner_id).maybeSingle(),
-    admin.from("profiles").select("display_name").eq("id", period.owner_id).maybeSingle(),
-  ]);
+  const [{ data: link }, { data: sharing }, { data: owner }] =
+    await Promise.all([
+      admin
+        .from("partner_links")
+        .select("partner_id")
+        .eq("owner_id", period.owner_id)
+        .maybeSingle(),
+      admin
+        .from("sharing_settings")
+        .select("share_periods")
+        .eq("owner_id", period.owner_id)
+        .maybeSingle(),
+      admin
+        .from("profiles")
+        .select("display_name")
+        .eq("id", period.owner_id)
+        .maybeSingle(),
+    ]);
   if (!link || !sharing?.share_periods) return 0;
 
   const name = owner?.display_name || "Your partner";
@@ -354,7 +380,10 @@ Deno.serve(async (req) => {
       const body = await req.json().catch(() => ({}));
       // From the periods trigger (migration 4)
       if (body?.event === "period-started" && body.period_id) {
-        return json({ ok: true, sent: await notifyPeriodStarted(body.period_id) });
+        return json({
+          ok: true,
+          sent: await notifyPeriodStarted(body.period_id),
+        });
       }
       const sent = await runSchedule(admin);
       return json({ ok: true, sent });

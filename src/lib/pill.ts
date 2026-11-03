@@ -6,6 +6,9 @@ export interface PackConfig {
   packStart: string; // first pill of any pack; later packs repeat from here
   activeDays: number;
   breakDays: number;
+  /** Learned from her logged bleeds (see calibrateBleed); defaults used if absent. */
+  bleedOffset?: number; // 0-based off day the bleed usually starts on
+  bleedLength?: number;
 }
 
 export interface PackDayInfo {
@@ -19,17 +22,22 @@ export interface PackDayInfo {
   daysUntilStart: number; // only meaningful for "before"
 }
 
-// Withdrawal bleeds usually begin a couple of days into the break. These are
-// placeholder estimates; once she logs bleeds (step 3) we'll calibrate them
-// from her own history.
+// Withdrawal bleeds usually begin a couple of days into the break. These
+// defaults are used until calibrateBleed() has learned her own timing.
 export const BLEED_START_OFFSET = 2; // off day 3
 export const BLEED_LENGTH = 4;
 
 /** [first off-day index, length] of the expected bleed, clamped to the break. */
 function bleedWindow(cfg: PackConfig): [number, number] {
   if (cfg.breakDays === 0) return [0, 0];
-  const start = Math.min(BLEED_START_OFFSET, cfg.breakDays - 1);
-  return [start, Math.min(BLEED_LENGTH, cfg.breakDays - start)];
+  const start = Math.min(
+    cfg.bleedOffset ?? BLEED_START_OFFSET,
+    cfg.breakDays - 1,
+  );
+  return [
+    start,
+    Math.min(cfg.bleedLength ?? BLEED_LENGTH, cfg.breakDays - start),
+  ];
 }
 
 export const toISODate = (d: Date) => format(d, "yyyy-MM-dd");
@@ -120,4 +128,47 @@ export function nextPillBleed(cfg: PackConfig, today: Date) {
   if (current && differenceInCalendarDays(current.end, today) >= 0)
     return current;
   return expectedBleed(packDay(cfg, info.nextPackStart), cfg);
+}
+
+const median = (xs: number[]) => {
+  const s = [...xs].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2);
+};
+
+/**
+ * Learn when her withdrawal bleed usually starts and how long it lasts, from
+ * bleeds logged around her breaks (last 6). Needs at least 2; otherwise the
+ * defaults stay. Mirrored on the server in supabase/functions/_shared/pack.ts.
+ */
+export function calibrateBleed(
+  cfg: PackConfig,
+  periods: { start_date: string; end_date: string | null }[],
+): PackConfig {
+  const offsets: number[] = [];
+  const lengths: number[] = [];
+  for (const p of periods) {
+    const pd = packDay(cfg, parseISO(p.start_date));
+    let offset: number;
+    if (pd.kind === "off") offset = pd.number - 1;
+    else if (pd.kind === "active" && pd.number > cfg.activeDays - 3)
+      offset = 0; // started just before the break
+    else continue; // not a withdrawal bleed (or before tracking)
+    offsets.push(offset);
+    if (p.end_date)
+      lengths.push(
+        differenceInCalendarDays(parseISO(p.end_date), parseISO(p.start_date)) +
+          1,
+      );
+  }
+  if (offsets.length < 2) return cfg;
+  const recentLengths = lengths.slice(-6);
+  return {
+    ...cfg,
+    bleedOffset: median(offsets.slice(-6)),
+    bleedLength:
+      recentLengths.length >= 2
+        ? Math.min(Math.max(median(recentLengths), 2), 10)
+        : cfg.bleedLength,
+  };
 }
