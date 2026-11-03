@@ -65,6 +65,7 @@ export default function CalendarGrid({
             ].join(" ")}
             onClick={() => onSelect(d.date)}
           >
+            {d.logged && <i className="log-mark" aria-label="logged" />}
             <span>{parseISO(d.date).getDate()}</span>
             {d.pill && (
               <i
@@ -81,6 +82,9 @@ export default function CalendarGrid({
         </span>
         <span>
           <i className="sw predicted" /> predicted
+        </span>
+        <span>
+          <i className="log-mark legend-mark" /> logged
         </span>
         {pillMode ? (
           <>

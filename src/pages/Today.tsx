@@ -1,17 +1,14 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import Disclaimer from "../components/Disclaimer";
+import LogTodayCard from "../components/log/LogTodayCard";
 import NaturalToday from "../components/period/NaturalToday";
 import PeriodCard from "../components/period/PeriodCard";
 import PackSetup from "../components/pill/PackSetup";
 import PillToday from "../components/pill/PillToday";
 import { usePeriods, useTracking } from "../data/hooks";
+import { greeting } from "../lib/greeting";
 import { useToday } from "../lib/useToday";
-
-function greeting() {
-  const h = new Date().getHours();
-  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
-}
 
 export default function Today() {
   const { profile, session, link, counterpart } = useAuth();
@@ -38,11 +35,13 @@ export default function Today() {
         <>
           <NaturalToday tracking={tracking} periods={periods} today={today} />
           <PeriodCard ownerId={ownerId} periods={periods} today={today} />
+          <LogTodayCard ownerId={ownerId} today={today} />
         </>
       ) : tracking?.pack_start_date ? (
         <>
           <PillToday ownerId={ownerId} tracking={tracking} today={today} />
           <PeriodCard ownerId={ownerId} periods={periods} today={today} />
+          <LogTodayCard ownerId={ownerId} today={today} />
         </>
       ) : (
         <PackSetup ownerId={ownerId} today={today} />

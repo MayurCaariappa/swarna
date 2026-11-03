@@ -38,6 +38,7 @@ export interface DayInfo<P extends PeriodLike = PeriodLike> {
   off?: number;
   fertile: boolean;
   ovulation: boolean;
+  logged?: boolean; // has a daily log entry
 }
 
 const WEEK = { weekStartsOn: 1 as const }; // Monday first

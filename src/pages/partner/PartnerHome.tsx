@@ -1,6 +1,8 @@
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { useAuth } from "../../auth/AuthProvider";
 import Disclaimer from "../../components/Disclaimer";
+import LogSummary from "../../components/log/LogSummary";
+import { greeting } from "../../lib/greeting";
 import { cycleDay, naturalPeriods, periodOn, predict } from "../../lib/cycle";
 import { nextPillBleed, packDay, type PackConfig } from "../../lib/pill";
 import { BLEEDING, naturalPhase, pillPhase } from "../../lib/phase";
@@ -21,11 +23,15 @@ export default function PartnerHome() {
     takenDates,
     today,
     loaded,
+    logs,
   } = usePartnerData();
+  const todayLog = logs?.[today];
   const { profile } = useAuth();
   const header = (
     <div>
-      <h1>Hi {profile?.display_name || "there"}</h1>
+      <h1>
+        {greeting()}, {profile?.display_name || "there"}
+      </h1>
       <p className="muted">Here's how {name} is doing</p>
     </div>
   );
@@ -168,6 +174,13 @@ export default function PartnerHome() {
           ) : (
             <p>Not marked yet</p>
           )}
+        </section>
+      )}
+
+      {todayLog && (
+        <section className="card stack">
+          <p className="muted small">{name} today</p>
+          <LogSummary log={todayLog} />
         </section>
       )}
 

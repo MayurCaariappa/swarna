@@ -28,7 +28,19 @@ export interface PartnerSnapshot {
   periods: SharedPeriod[];
   takenDates: string[]; // pill marked taken (last ~4 months), only if shared
   takenAt: Record<string, string | null>;
+  /** Her daily logs, only the fields she shares, by date (last ~4 months). */
+  logs: Record<string, SharedDayLog>;
   loaded: boolean;
+}
+
+export interface SharedDayLog {
+  date: string;
+  flow: string | null;
+  symptoms: string[] | null;
+  mood: string | null;
+  energy: number | null;
+  sex: string | null;
+  notes: string | null;
 }
 
 const EMPTY: PartnerSnapshot = {
@@ -37,6 +49,7 @@ const EMPTY: PartnerSnapshot = {
   periods: [],
   takenDates: [],
   takenAt: {},
+  logs: {},
   loaded: false,
 };
 
@@ -68,7 +81,7 @@ export function PartnerDataProvider({ children }: { children: ReactNode }) {
 
   const load = useCallback(async () => {
     const since = format(addDays(parseISO(today), -130), "yyyy-MM-dd");
-    const [s, t, p, l] = await Promise.all([
+    const [s, t, p, l, d] = await Promise.all([
       supabase
         .from("sharing_settings")
         .select("share_periods, share_pill_status")
@@ -91,8 +104,13 @@ export function PartnerDataProvider({ children }: { children: ReactNode }) {
         .eq("owner_id", ownerId)
         .eq("deleted", false)
         .gte("date", since),
+      supabase
+        .from("shared_daily_logs")
+        .select("date, flow, symptoms, mood, energy, sex, notes")
+        .eq("owner_id", ownerId)
+        .gte("date", since),
     ]);
-    if (s.error || t.error || p.error || l.error) return; // offline: keep the cached view
+    if (s.error || t.error || p.error || l.error || d.error) return; // offline: keep the cached view
     const next: PartnerSnapshot = {
       sharing: s.data,
       tracking: t.data,
@@ -101,6 +119,7 @@ export function PartnerDataProvider({ children }: { children: ReactNode }) {
       takenAt: Object.fromEntries(
         (l.data ?? []).map((r) => [r.date, r.taken_at]),
       ),
+      logs: Object.fromEntries((d.data ?? []).map((r) => [r.date, r])),
       loaded: true,
     };
     setSnap(next);
@@ -120,6 +139,7 @@ export function PartnerDataProvider({ children }: { children: ReactNode }) {
       "tracking_settings",
       "pill_logs",
       "periods",
+      "shared_daily_logs",
     ]) {
       channel.on(
         "postgres_changes",

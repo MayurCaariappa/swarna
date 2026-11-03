@@ -182,9 +182,13 @@ const SHARE_OPTIONS: {
   {
     key: "share_periods",
     label: "Periods & predictions",
-    hint: "Bleeds, cycle/pack day, phase, next bleed",
+    hint: "Bleeds, flow, cycle/pack day, phase, next bleed",
   },
-  { key: "share_pill_status", label: "Pill taken today" },
+  {
+    key: "share_pill_status",
+    label: "Pill status",
+    hint: "Taken today ✓ and taken / not-marked pills on the calendar",
+  },
   { key: "share_mood", label: "Mood" },
   { key: "share_energy", label: "Energy" },
   { key: "share_symptoms", label: "Symptoms" },

@@ -7,12 +7,13 @@ import {
 import { useMemo, useState } from "react";
 import CalendarGrid from "../../components/calendar/CalendarGrid";
 import Disclaimer from "../../components/Disclaimer";
+import LogSummary from "../../components/log/LogSummary";
 import { buildMonthDays } from "../../lib/calendarDays";
 import { usePartnerData } from "../../partner/PartnerData";
 
 /** Read-only shared calendar. */
 export default function PartnerCalendar() {
-  const { ownerName, sharing, tracking, periods, takenDates, today } =
+  const { ownerName, sharing, tracking, periods, takenDates, today, logs } =
     usePartnerData();
   const [month, setMonth] = useState(() => startOfMonth(parseISO(today)));
   const [selected, setSelected] = useState(today);
@@ -29,11 +30,12 @@ export default function PartnerCalendar() {
         showPeriods ? periods : [],
         tracking,
         showPills ? taken : null,
-      ),
-    [month, today, periods, tracking, taken, showPeriods, showPills],
+      ).map((d) => ({ ...d, logged: Boolean(logs?.[d.date]) })),
+    [month, today, periods, tracking, taken, showPeriods, showPills, logs],
   );
 
-  if (!showPeriods && !showPills) {
+  const sharesLogs = Object.keys(logs ?? {}).length > 0;
+  if (!showPeriods && !showPills && !sharesLogs) {
     return (
       <div className="stack">
         <h1>Calendar</h1>
@@ -91,11 +93,13 @@ export default function PartnerCalendar() {
           {sel.fertile && !sel.ovulation && (
             <p className="muted">Fertile window (estimate)</p>
           )}
+          {logs?.[sel.date] && <LogSummary log={logs[sel.date]} />}
           {!sel.period &&
             !sel.predictedBleed &&
             !sel.pill &&
             !sel.off &&
-            !sel.fertile && <p className="muted">Nothing logged.</p>}
+            !sel.fertile &&
+            !logs?.[sel.date] && <p className="muted">Nothing logged.</p>}
         </section>
       )}
 

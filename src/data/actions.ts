@@ -1,4 +1,11 @@
-import { DEFAULT_TRACKING, db, type PeriodRow, type TrackingRow } from "./db";
+import {
+  DEFAULT_TRACKING,
+  EMPTY_DAILY_LOG,
+  db,
+  type DailyLogFields,
+  type PeriodRow,
+  type TrackingRow,
+} from "./db";
 import { requestSync } from "./sync";
 
 // Every write goes to the phone first (instant, works offline), then syncs.
@@ -104,5 +111,25 @@ export async function savePeriod(
 
 export async function deletePeriod(period: PeriodRow) {
   await writePeriod({ ...period, deleted: true });
+  requestSync();
+}
+
+// ── Daily log ──
+
+/** Merge changes into a day's log (creates it if needed). Saves instantly. */
+export async function saveDailyLog(ownerId: string, date: string, patch: Partial<DailyLogFields>) {
+  await db.transaction("rw", db.dailyLogs, async () => {
+    const current = await db.dailyLogs.get([ownerId, date]);
+    await db.dailyLogs.put({
+      ...EMPTY_DAILY_LOG,
+      ...current,
+      ...patch,
+      owner_id: ownerId,
+      date,
+      deleted: false,
+      updated_at: new Date().toISOString(),
+      dirty: 1,
+    });
+  });
   requestSync();
 }

@@ -8,10 +8,19 @@ import { useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import CalendarGrid from "../components/calendar/CalendarGrid";
 import Disclaimer from "../components/Disclaimer";
+import DailyLogSheet from "../components/log/DailyLogSheet";
+import LogSummary from "../components/log/LogSummary";
 import PeriodEditor from "../components/period/PeriodEditor";
 import { endPeriod, setPillTaken } from "../data/actions";
 import type { PeriodRow } from "../data/db";
-import { usePeriods, usePillLogs, useTracking } from "../data/hooks";
+import {
+  hasContent,
+  useDailyLog,
+  useLoggedDates,
+  usePeriods,
+  usePillLogs,
+  useTracking,
+} from "../data/hooks";
 import { buildMonthDays, monthGrid } from "../lib/calendarDays";
 import { useToday } from "../lib/useToday";
 
@@ -28,13 +37,19 @@ export default function Calendar() {
 
   const grid = monthGrid(month);
   const logs = usePillLogs(ownerId, grid.from, grid.to);
+  const loggedDates = useLoggedDates(ownerId, grid.from, grid.to);
+  const selectedLog = useDailyLog(ownerId, selected);
+  const [logOpen, setLogOpen] = useState(false);
 
   const days = useMemo(
     () =>
       periods && tracking !== undefined
-        ? buildMonthDays(month, today, periods, tracking, logs ?? new Map())
+        ? buildMonthDays(month, today, periods, tracking, logs ?? new Map()).map((d) => ({
+            ...d,
+            logged: loggedDates?.has(d.date) ?? false,
+          }))
         : [],
-    [month, today, periods, tracking, logs],
+    [month, today, periods, tracking, logs, loggedDates],
   );
 
   if (!periods || tracking === undefined) return null;
@@ -160,10 +175,21 @@ export default function Calendar() {
               {sel.fertile && !sel.ovulation && (
                 <p className="muted">Fertile window (estimate)</p>
               )}
+
+              {sel.date <= today && (
+                <div className="stack day-log">
+                  {selectedLog && hasContent(selectedLog) && <LogSummary log={selectedLog} />}
+                  <button className="btn" onClick={() => setLogOpen(true)}>
+                    {selectedLog && hasContent(selectedLog) ? "Edit daily log" : "Add daily log"}
+                  </button>
+                </div>
+              )}
             </>
           )}
         </section>
       )}
+
+      {logOpen && <DailyLogSheet ownerId={ownerId} date={selected} onClose={() => setLogOpen(false)} />}
 
       <Disclaimer />
     </div>

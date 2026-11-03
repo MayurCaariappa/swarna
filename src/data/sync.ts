@@ -48,6 +48,14 @@ const SPECS: Spec[] = [
       "id, owner_id, start_date, end_date, deleted, updated_at, synced_at",
     key: (r) => r.id,
   },
+  {
+    remote: "daily_logs",
+    local: db.dailyLogs,
+    onConflict: "owner_id,date",
+    columns:
+      "owner_id, date, flow, symptoms, mood, energy, discharge, sex, weight_kg, notes, deleted, updated_at, synced_at",
+    key: (r) => [r.owner_id, r.date],
+  },
 ];
 
 // ── status, for the UI ──

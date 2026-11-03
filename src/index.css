@@ -870,3 +870,45 @@ input:disabled {
   color: var(--bleed);
   font-weight: 600;
 }
+
+/* ── Daily log sheet ── */
+.sheet {
+  position: fixed; inset: 0; z-index: 30;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  animation: sheet-up 0.18s ease-out;
+}
+@keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } }
+.sheet-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: calc(var(--safe-top) + 14px) 16px 10px;
+  border-bottom: 1px solid var(--border);
+  max-width: 560px; width: 100%; margin: 0 auto;
+}
+.sheet-head .btn.link { font-weight: 650; font-size: 1.05rem; }
+.sheet-body {
+  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 16px 16px calc(var(--safe-bottom) + 32px);
+  max-width: 560px; width: 100%; margin: 0 auto;
+}
+.group { display: flex; flex-direction: column; gap: 8px; }
+.group-title { font-weight: 600; color: var(--text); font-size: 0.95rem; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.tap-chip {
+  font: inherit; font-size: 0.92rem; color: var(--text);
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 999px; padding: 8px 14px; min-height: 40px; cursor: pointer;
+}
+.tap-chip.on { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); font-weight: 600; }
+.tap-chip .emoji { font-size: 1.05rem; }
+.tap-chip .bars { letter-spacing: -1px; }
+.note-text { color: var(--muted); font-style: italic; white-space: pre-wrap; }
+.day-log { border-top: 1px solid var(--border); padding-top: 12px; }
+
+/* "Logged" mark on calendar days */
+.log-mark {
+  position: absolute; top: 4px; right: 5px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--fertile);
+}
+.cal-day.bleed .log-mark { background: #fff; }
+.legend-mark { position: static; display: inline-block; width: 7px; height: 7px; }

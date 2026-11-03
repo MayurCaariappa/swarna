@@ -39,6 +39,40 @@ export interface PeriodRow {
   dirty: 0 | 1;
 }
 
+export type Flow = "spotting" | "light" | "medium" | "heavy";
+export type Mood = "happy" | "calm" | "okay" | "low" | "sad" | "irritable";
+export type Discharge = "none" | "sticky" | "creamy" | "watery" | "egg-white";
+export type Sex = "none" | "protected" | "unprotected";
+
+export interface DailyLogRow {
+  owner_id: string;
+  date: string; // yyyy-MM-dd
+  flow: Flow | null;
+  symptoms: string[];
+  mood: Mood | null;
+  energy: number | null; // 1 low … 4 high
+  discharge: Discharge | null;
+  sex: Sex | null;
+  weight_kg: number | null;
+  notes: string | null;
+  deleted: boolean;
+  updated_at: string;
+  dirty: 0 | 1;
+}
+
+export type DailyLogFields = Omit<DailyLogRow, "owner_id" | "date" | "deleted" | "updated_at" | "dirty">;
+
+export const EMPTY_DAILY_LOG: DailyLogFields = {
+  flow: null,
+  symptoms: [],
+  mood: null,
+  energy: null,
+  discharge: null,
+  sex: null,
+  weight_kg: null,
+  notes: null,
+};
+
 interface MetaRow {
   key: string;
   value: string;
@@ -48,6 +82,7 @@ export const db = new Dexie("swarna") as Dexie & {
   tracking: EntityTable<TrackingRow, "owner_id">;
   pillLogs: Table<PillLogRow, [string, string]>;
   periods: EntityTable<PeriodRow, "id">;
+  dailyLogs: Table<DailyLogRow, [string, string]>;
   meta: EntityTable<MetaRow, "key">;
 };
 
@@ -59,6 +94,10 @@ db.version(1).stores({
 
 db.version(2).stores({
   periods: "id, owner_id, [owner_id+start_date], dirty",
+});
+
+db.version(3).stores({
+  dailyLogs: "[owner_id+date], owner_id, dirty",
 });
 
 export const DEFAULT_TRACKING: Omit<
