@@ -11,6 +11,7 @@ import PartnerCalendar from "./pages/partner/PartnerCalendar";
 import PartnerHistory from "./pages/partner/PartnerHistory";
 import PartnerHome from "./pages/partner/PartnerHome";
 import Settings from "./pages/Settings";
+import Stats from "./pages/Stats";
 import Today from "./pages/Today";
 import Welcome from "./pages/Welcome";
 
@@ -66,6 +67,7 @@ function AppRoutes() {
           <>
             <Route path="/today" element={<Today />} />
             <Route path="/calendar" element={<Calendar />} />
+            <Route path="/stats" element={<Stats />} />
           </>
         )}
         {profile.role === "partner" && (

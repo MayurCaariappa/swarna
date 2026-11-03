@@ -873,42 +873,220 @@ input:disabled {
 
 /* ── Daily log sheet ── */
 .sheet {
-  position: fixed; inset: 0; z-index: 30;
+  position: fixed;
+  inset: 0;
+  z-index: 30;
   background: var(--bg);
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
   animation: sheet-up 0.18s ease-out;
 }
-@keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } }
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
 .sheet-head {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: calc(var(--safe-top) + 14px) 16px 10px;
   border-bottom: 1px solid var(--border);
-  max-width: 560px; width: 100%; margin: 0 auto;
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
 }
-.sheet-head .btn.link { font-weight: 650; font-size: 1.05rem; }
+.sheet-head .btn.link {
+  font-weight: 650;
+  font-size: 1.05rem;
+}
 .sheet-body {
-  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 16px 16px calc(var(--safe-bottom) + 32px);
-  max-width: 560px; width: 100%; margin: 0 auto;
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
 }
-.group { display: flex; flex-direction: column; gap: 8px; }
-.group-title { font-weight: 600; color: var(--text); font-size: 0.95rem; }
-.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.group-title {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .tap-chip {
-  font: inherit; font-size: 0.92rem; color: var(--text);
-  background: var(--surface); border: 1.5px solid var(--border);
-  border-radius: 999px; padding: 8px 14px; min-height: 40px; cursor: pointer;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  min-height: 40px;
+  cursor: pointer;
 }
-.tap-chip.on { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); font-weight: 600; }
-.tap-chip .emoji { font-size: 1.05rem; }
-.tap-chip .bars { letter-spacing: -1px; }
-.note-text { color: var(--muted); font-style: italic; white-space: pre-wrap; }
-.day-log { border-top: 1px solid var(--border); padding-top: 12px; }
+.tap-chip.on {
+  background: var(--gold-soft);
+  border-color: var(--gold);
+  color: var(--gold);
+  font-weight: 600;
+}
+.tap-chip .emoji {
+  font-size: 1.05rem;
+}
+.tap-chip .bars {
+  letter-spacing: -1px;
+}
+.note-text {
+  color: var(--muted);
+  font-style: italic;
+  white-space: pre-wrap;
+}
+.day-log {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
 
 /* "Logged" mark on calendar days */
 .log-mark {
-  position: absolute; top: 4px; right: 5px;
-  width: 5px; height: 5px; border-radius: 50%; background: var(--fertile);
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--fertile);
 }
-.cal-day.bleed .log-mark { background: #fff; }
-.legend-mark { position: static; display: inline-block; width: 7px; height: 7px; }
+.cal-day.bleed .log-mark {
+  background: #fff;
+}
+.legend-mark {
+  position: static;
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+}
+
+/* ── Stats ── */
+:root {
+  --chart-gold: #b8892b;
+  --chart-bleed: #c8576b;
+} /* validated vs dark surface */
+@media (prefers-color-scheme: light) {
+  :root {
+    --chart-gold: #b2841f;
+    --chart-bleed: #b23f55;
+  } /* validated vs light surface */
+}
+.tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 8px;
+  text-align: center;
+}
+.tile .stat {
+  font-size: 1.35rem;
+}
+.tile .unit {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+.chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  touch-action: pan-y;
+}
+.chart .grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.chart .axis {
+  fill: var(--muted);
+  font-size: 10px;
+}
+.chart .fill-gold {
+  fill: var(--chart-gold);
+}
+.chart .fill-bleed {
+  fill: var(--chart-bleed);
+}
+.chart .bar {
+  opacity: 0.75;
+}
+.chart .bar.on {
+  opacity: 1;
+}
+.chart .avg-line {
+  stroke: var(--text);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+  opacity: 0.6;
+}
+.chart .line-gold {
+  fill: none;
+  stroke: var(--chart-gold);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.chart .pt {
+  fill: var(--chart-gold);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+.chart-readout {
+  color: var(--text);
+}
+.sw.chart-gold {
+  background: var(--chart-gold);
+}
+.sw.chart-bleed {
+  background: var(--chart-bleed);
+}
+.sw.chart-avg {
+  height: 0;
+  border-top: 2px dashed var(--muted);
+  border-radius: 0;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 500;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.table td {
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.table tr:last-child td {
+  border-bottom: none;
+}
+details summary {
+  cursor: pointer;
+}
+details[open] summary {
+  margin-bottom: 8px;
+}
