@@ -58,9 +58,9 @@ export default function Layout() {
               <TabIcon d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" />
               Calendar
             </NavLink>
-            <NavLink to="/partner/history">
-              <TabIcon d="M4 6h16M4 12h10M4 18h7" />
-              History
+            <NavLink to="/partner/periods">
+              <TabIcon d="M12 3c-3 4.5-5.5 8-5.5 11a5.5 5.5 0 0 0 11 0c0-3-2.5-6.5-5.5-11z" />
+              Periods
             </NavLink>
           </>
         )}

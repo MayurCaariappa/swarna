@@ -72,7 +72,7 @@ function AppRoutes() {
           <>
             <Route path="/partner" element={<PartnerHome />} />
             <Route path="/partner/calendar" element={<PartnerCalendar />} />
-            <Route path="/partner/history" element={<PartnerHistory />} />
+            <Route path="/partner/periods" element={<PartnerHistory />} />
           </>
         )}
         <Route path="/settings" element={<Settings />} />

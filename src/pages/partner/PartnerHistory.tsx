@@ -9,14 +9,14 @@ const avg = (xs: number[]) =>
     ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10
     : null;
 
-/** Every logged bleed with start, end, length, and averages. */
+/** "Periods" tab: every logged bleed with start, end, length, and averages. */
 export default function PartnerHistory() {
   const { ownerName, sharing, periods } = usePartnerData();
 
   if (!sharing?.share_periods) {
     return (
       <div className="stack">
-        <h1>History</h1>
+        <h1>Periods</h1>
         <section className="card">
           <p className="muted">
             {ownerName} isn't sharing her periods right now.
@@ -33,7 +33,11 @@ export default function PartnerHistory() {
 
   return (
     <div className="stack">
-      <h1>History</h1>
+      <h1>Periods</h1>
+
+      <p className="muted">
+        Every period {ownerName} has logged, newest first.
+      </p>
 
       <section className="card stats-row">
         <div>

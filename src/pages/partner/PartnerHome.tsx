@@ -1,4 +1,5 @@
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
+import { useAuth } from "../../auth/AuthProvider";
 import Disclaimer from "../../components/Disclaimer";
 import { cycleDay, naturalPeriods, periodOn, predict } from "../../lib/cycle";
 import { nextPillBleed, packDay, type PackConfig } from "../../lib/pill";
@@ -21,6 +22,13 @@ export default function PartnerHome() {
     today,
     loaded,
   } = usePartnerData();
+  const { profile } = useAuth();
+  const header = (
+    <div>
+      <h1>Hi {profile?.display_name || "there"}</h1>
+      <p className="muted">Here's how {name} is doing</p>
+    </div>
+  );
   const showPeriods = sharing?.share_periods ?? false;
   const showPill = sharing?.share_pill_status ?? false;
   const todayDate = parseISO(today);
@@ -28,7 +36,7 @@ export default function PartnerHome() {
   if (!loaded && !sharing) {
     return (
       <div className="stack">
-        <h1>{name}</h1>
+        {header}
         <p className="muted">Loading…</p>
       </div>
     );
@@ -79,7 +87,7 @@ export default function PartnerHome() {
 
   return (
     <div className="stack">
-      <h1>{name}</h1>
+      {header}
 
       {nothingShared && (
         <section className="card">
