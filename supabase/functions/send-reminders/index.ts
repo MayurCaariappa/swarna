@@ -32,8 +32,14 @@ const cors = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// The subject must be a URL or mailto: — accept a bare domain too.
+const rawSubject = (Deno.env.get("VAPID_SUBJECT") ?? "").trim();
+const vapidSubject = /^(https?:|mailto:)/.test(rawSubject)
+  ? rawSubject
+  : `https://${rawSubject || "swarna.vercel.app"}`;
+
 webpush.setVapidDetails(
-  Deno.env.get("VAPID_SUBJECT") ?? "https://swarna.vercel.app",
+  vapidSubject,
   Deno.env.get("VAPID_PUBLIC_KEY")!,
   Deno.env.get("VAPID_PRIVATE_KEY")!,
 );
