@@ -3,7 +3,11 @@ import { requestSync } from "./sync";
 
 // Every write goes to the phone first (instant, works offline), then syncs.
 
-export async function setPillTaken(ownerId: string, date: string, taken: boolean) {
+export async function setPillTaken(
+  ownerId: string,
+  date: string,
+  taken: boolean,
+) {
   const now = new Date().toISOString();
   await db.pillLogs.put({
     owner_id: ownerId,
@@ -20,7 +24,14 @@ export async function setPillTaken(ownerId: string, date: string, taken: boolean
 export async function markPillsTaken(ownerId: string, dates: string[]) {
   const now = new Date().toISOString();
   await db.pillLogs.bulkPut(
-    dates.map((date) => ({ owner_id: ownerId, date, taken_at: now, deleted: false, updated_at: now, dirty: 1 as const })),
+    dates.map((date) => ({
+      owner_id: ownerId,
+      date,
+      taken_at: now,
+      deleted: false,
+      updated_at: now,
+      dirty: 1 as const,
+    })),
   );
   requestSync();
 }

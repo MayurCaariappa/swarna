@@ -20,7 +20,11 @@ export default function Today() {
   return (
     <div className="stack">
       <p className="muted">
-        {new Date(today + "T12:00").toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}
+        {new Date(today + "T12:00").toLocaleDateString(undefined, {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+        })}
       </p>
       <h1>
         {greeting()}, {profile?.display_name}
@@ -31,8 +35,9 @@ export default function Today() {
           <p className="muted">Natural cycle</p>
           <p className="hero-text">Cycle tracking</p>
           <p className="muted small">
-            Period logging and cycle predictions are coming in the next step. The first cycles after stopping the pill
-            can be irregular, so predictions will take a few cycles to settle.
+            Period logging and cycle predictions are coming in the next step.
+            The first cycles after stopping the pill can be irregular, so
+            predictions will take a few cycles to settle.
           </p>
         </section>
       ) : tracking?.pack_start_date ? (
@@ -47,7 +52,11 @@ export default function Today() {
           <span className="muted">Share only what you choose.</span>
         </Link>
       )}
-      {link && <p className="muted small">Sharing with {counterpart?.display_name || "your partner"}.</p>}
+      {link && (
+        <p className="muted small">
+          Sharing with {counterpart?.display_name || "your partner"}.
+        </p>
+      )}
 
       <Disclaimer />
     </div>

@@ -6,7 +6,12 @@ export function dateIn(timeZone?: string, at = new Date()): string {
   if (!timeZone) return toISODate(at);
   try {
     // en-CA formats as yyyy-mm-dd
-    return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(at);
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(at);
   } catch {
     return toISODate(at);
   }

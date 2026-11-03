@@ -29,7 +29,8 @@ const SPECS: Spec[] = [
     remote: "tracking_settings",
     local: db.tracking,
     onConflict: "owner_id",
-    columns: "owner_id, mode, pack_start_date, active_days, break_days, reminder_time, updated_at, synced_at",
+    columns:
+      "owner_id, mode, pack_start_date, active_days, break_days, reminder_time, updated_at, synced_at",
     key: (r) => r.owner_id,
   },
   {
@@ -69,14 +70,17 @@ async function push(spec: Spec) {
   const rows: SyncedRow[] = await spec.local.where("dirty").equals(1).toArray();
   if (rows.length === 0) return;
   const payload = rows.map(({ dirty: _dirty, ...rest }) => rest);
-  const { error } = await supabase.from(spec.remote).upsert(payload, { onConflict: spec.onConflict });
+  const { error } = await supabase
+    .from(spec.remote)
+    .upsert(payload, { onConflict: spec.onConflict });
   if (error) throw error;
   // Clear the flag, unless the row was edited again while we were uploading.
   await db.transaction("rw", spec.local, async () => {
     for (const row of rows) {
       const key = spec.key(row as unknown as Record<string, unknown>);
       const current: SyncedRow | undefined = await spec.local.get(key);
-      if (current && current.updated_at === row.updated_at) await spec.local.update(key, { dirty: 0 });
+      if (current && current.updated_at === row.updated_at)
+        await spec.local.update(key, { dirty: 0 });
     }
   });
 }
@@ -91,19 +95,30 @@ async function pull(spec: Spec, ownerId: string) {
     .order("synced_at", { ascending: true })
     .limit(1000);
   // Re-fetch a few seconds of overlap so nothing committed late is missed.
-  if (cursor) query = query.gte("synced_at", new Date(time(cursor) - 5000).toISOString());
+  if (cursor)
+    query = query.gte("synced_at", new Date(time(cursor) - 5000).toISOString());
   const { data, error } = await query;
   if (error) throw error;
-  const remoteRows = (data ?? []) as unknown as (Record<string, unknown> & { synced_at: string; updated_at: string })[];
+  const remoteRows = (data ?? []) as unknown as (Record<string, unknown> & {
+    synced_at: string;
+    updated_at: string;
+  })[];
   if (remoteRows.length === 0) return;
 
   await db.transaction("rw", spec.local, db.meta, async () => {
     for (const { synced_at: _s, ...remote } of remoteRows) {
-      const local: SyncedRow | undefined = await spec.local.get(spec.key(remote));
-      const keepLocal = local?.dirty === 1 && time(local.updated_at) > time(remote.updated_at as string);
+      const local: SyncedRow | undefined = await spec.local.get(
+        spec.key(remote),
+      );
+      const keepLocal =
+        local?.dirty === 1 &&
+        time(local.updated_at) > time(remote.updated_at as string);
       if (!keepLocal) await spec.local.put({ ...remote, dirty: 0 });
     }
-    await db.meta.put({ key: cursorKey, value: remoteRows[remoteRows.length - 1].synced_at });
+    await db.meta.put({
+      key: cursorKey,
+      value: remoteRows[remoteRows.length - 1].synced_at,
+    });
   });
 }
 
@@ -143,7 +158,9 @@ export async function syncNow(): Promise<void> {
 }
 
 async function refreshPending() {
-  const counts = await Promise.all(SPECS.map((s) => s.local.where("dirty").equals(1).count()));
+  const counts = await Promise.all(
+    SPECS.map((s) => s.local.where("dirty").equals(1).count()),
+  );
   setStatus({ pending: counts.some((c) => c > 0) });
 }
 
@@ -170,7 +187,12 @@ export function startSync(id: string) {
   for (const spec of SPECS) {
     channel.on(
       "postgres_changes",
-      { event: "*", schema: "public", table: spec.remote, filter: `owner_id=eq.${id}` },
+      {
+        event: "*",
+        schema: "public",
+        table: spec.remote,
+        filter: `owner_id=eq.${id}`,
+      },
       () => requestSync(),
     );
   }

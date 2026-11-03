@@ -533,35 +533,127 @@ textarea {
 }
 
 /* ── Pill mode ── */
-:root { --bleed: #c8576b; --bleed-soft: rgba(200, 87, 107, 0.18); }
+:root {
+  --bleed: #c8576b;
+  --bleed-soft: rgba(200, 87, 107, 0.18);
+}
 @media (prefers-color-scheme: light) {
-  :root { --bleed: #b23f55; --bleed-soft: rgba(178, 63, 85, 0.12); }
+  :root {
+    --bleed: #b23f55;
+    --bleed-soft: rgba(178, 63, 85, 0.12);
+  }
 }
 
-.btn.take { font-size: 1.35rem; min-height: 64px; margin-top: 10px; border-radius: 18px; }
-.taken-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
-.taken-badge { color: var(--ok); font-weight: 600; font-size: 1.1rem; }
+.btn.take {
+  font-size: 1.35rem;
+  min-height: 64px;
+  margin-top: 10px;
+  border-radius: 18px;
+}
+.taken-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+.taken-badge {
+  color: var(--ok);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
 
-.strip-head { display: flex; align-items: center; justify-content: space-between; }
-.strip-head .btn.link { font-size: 1.4rem; padding: 0 10px; }
-.strip-head .btn.link:disabled { opacity: 0.25; }
+.strip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.strip-head .btn.link {
+  font-size: 1.4rem;
+  padding: 0 10px;
+}
+.strip-head .btn.link:disabled {
+  opacity: 0.25;
+}
 
-.strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
 .pill {
-  aspect-ratio: 1; width: 100%; padding: 0;
-  font: inherit; font-size: 0.8rem; font-weight: 600;
-  border-radius: 50%; display: grid; place-items: center;
-  border: 1.5px solid var(--border); background: none; color: var(--muted);
+  aspect-ratio: 1;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--border);
+  background: none;
+  color: var(--muted);
 }
-.pill:not(:disabled) { cursor: pointer; }
-.pill:disabled { opacity: 1; }
-.pill.taken { background: var(--gold); border-color: var(--gold); color: var(--on-gold); }
-.pill.missed { border-color: var(--danger); color: var(--danger); }
-.pill.today { border: 2px solid var(--gold); color: var(--gold); }
-.pill.is-today { box-shadow: 0 0 0 3px var(--gold-soft); }
-.pill.off { border-style: dashed; transform: scale(0.72); }
-.pill.off.bleed { background: var(--bleed-soft); border-color: var(--bleed); border-style: solid; }
+.pill:not(:disabled) {
+  cursor: pointer;
+}
+.pill:disabled {
+  opacity: 1;
+}
+.pill.taken {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--on-gold);
+}
+.pill.missed {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.pill.today {
+  border: 2px solid var(--gold);
+  color: var(--gold);
+}
+.pill.is-today {
+  box-shadow: 0 0 0 3px var(--gold-soft);
+}
+.pill.off {
+  border-style: dashed;
+  transform: scale(0.72);
+}
+.pill.off.bleed {
+  background: var(--bleed-soft);
+  border-color: var(--bleed);
+  border-style: solid;
+}
 
-.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; }
-.legend span { display: inline-flex; align-items: center; gap: 6px; }
-.legend .pill { display: inline-block; width: 14px; height: 14px; aspect-ratio: auto; transform: none; }
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend .pill {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  aspect-ratio: auto;
+  transform: none;
+}
+
+/* Opened from a pill reminder: draw the eye to Taken ✓ */
+.btn.take.pulse {
+  animation: take-pulse 1.4s ease-in-out infinite;
+}
+@keyframes take-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--gold-soft);
+  }
+  50% {
+    box-shadow: 0 0 0 10px var(--gold-soft);
+  }
+}

@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { setPillTaken } from "../../data/actions";
 import type { TrackingRow } from "../../data/db";
 import { usePillLogs } from "../../data/hooks";
@@ -24,6 +25,9 @@ export default function PillToday({ ownerId, tracking, today }: { ownerId: strin
   };
   const todayDate = parseISO(today);
   const info = packDay(cfg, todayDate);
+
+  const [params] = useSearchParams();
+  const fromReminder = params.has("take");
 
   // Which pack the strip shows: 0 = current, -1 = previous, …
   const [offset, setOffset] = useState(0);
@@ -68,7 +72,7 @@ export default function PillToday({ ownerId, tracking, today }: { ownerId: strin
                 </button>
               </div>
             ) : (
-              <button className="btn primary take" onClick={() => setPillTaken(ownerId, today, true)}>
+              <button className={`btn primary take${fromReminder ? " pulse" : ""}`} onClick={() => setPillTaken(ownerId, today, true)}>
                 Taken ✓
               </button>
             )}

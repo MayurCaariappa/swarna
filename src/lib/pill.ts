@@ -87,7 +87,8 @@ export function packDays(cfg: PackConfig, packStart: Date): StripDay[] {
       date: toISODate(addDays(packStart, i)),
       kind: active ? "active" : "off",
       number: active ? i + 1 : offIndex + 1,
-      predictedBleed: !active && offIndex >= bleedStart && offIndex < bleedStart + bleedLen,
+      predictedBleed:
+        !active && offIndex >= bleedStart && offIndex < bleedStart + bleedLen,
     });
   }
   return days;

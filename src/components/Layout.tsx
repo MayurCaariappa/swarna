@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { startSync } from "../data/sync";
+import { refreshPushSubscription } from "../lib/push";
 import { useOnline } from "../lib/useOnline";
 
 export default function Layout() {
@@ -9,6 +10,11 @@ export default function Layout() {
   const online = useOnline();
   const isOwner = profile?.role === "owner";
   const uid = session?.user.id;
+
+  // Keep this phone's reminder subscription fresh on the server.
+  useEffect(() => {
+    if (uid) void refreshPushSubscription();
+  }, [uid]);
 
   // Keep the phone's data and Supabase in sync while the app is open.
   useEffect(() => {

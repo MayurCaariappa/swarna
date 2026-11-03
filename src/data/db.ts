@@ -45,7 +45,10 @@ db.version(1).stores({
   meta: "key",
 });
 
-export const DEFAULT_TRACKING: Omit<TrackingRow, "owner_id" | "updated_at" | "dirty"> = {
+export const DEFAULT_TRACKING: Omit<
+  TrackingRow,
+  "owner_id" | "updated_at" | "dirty"
+> = {
   mode: "pill",
   pack_start_date: null,
   active_days: 21,

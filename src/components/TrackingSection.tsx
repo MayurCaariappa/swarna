@@ -11,7 +11,8 @@ export default function TrackingSection() {
   if (tracking === undefined) return null;
 
   const t = tracking ?? { ...DEFAULT_TRACKING, owner_id: ownerId };
-  const save = (patch: Parameters<typeof saveTracking>[1]) => saveTracking(ownerId, patch);
+  const save = (patch: Parameters<typeof saveTracking>[1]) =>
+    saveTracking(ownerId, patch);
 
   function setMode(mode: "pill" | "natural") {
     if (mode === t.mode) return;
@@ -35,10 +36,16 @@ export default function TrackingSection() {
       <h2>Tracking</h2>
 
       <div className="segmented">
-        <button className={t.mode === "pill" ? "on" : ""} onClick={() => setMode("pill")}>
+        <button
+          className={t.mode === "pill" ? "on" : ""}
+          onClick={() => setMode("pill")}
+        >
           On the pill
         </button>
-        <button className={t.mode === "natural" ? "on" : ""} onClick={() => setMode("natural")}>
+        <button
+          className={t.mode === "natural" ? "on" : ""}
+          onClick={() => setMode("natural")}
+        >
           Natural cycle
         </button>
       </div>
@@ -50,7 +57,9 @@ export default function TrackingSection() {
             <input
               type="date"
               value={t.pack_start_date ?? ""}
-              onChange={(e) => e.target.value && save({ pack_start_date: e.target.value })}
+              onChange={(e) =>
+                e.target.value && save({ pack_start_date: e.target.value })
+              }
             />
           </label>
           <div className="row">
@@ -84,12 +93,14 @@ export default function TrackingSection() {
             <input
               type="time"
               value={t.reminder_time.slice(0, 5)}
-              onChange={(e) => e.target.value && save({ reminder_time: e.target.value })}
+              onChange={(e) =>
+                e.target.value && save({ reminder_time: e.target.value })
+              }
             />
           </label>
           <p className="muted small">
-            Push reminders arrive in the next update. Even then, keep your current alarm for the first 2–3 weeks
-            until Swarna's reminders have proven reliable.
+            Turn on reminders below. Keep your current alarm for the first 2–3
+            weeks until Swarna's reminders have proven reliable.
           </p>
         </>
       )}

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
+import RemindersSection from "../components/RemindersSection";
 import TrackingSection from "../components/TrackingSection";
 import { useSyncStatus } from "../data/sync";
 import { isStandalone } from "../lib/platform";
@@ -25,6 +26,7 @@ export default function Settings() {
       </section>
 
       {isOwner && <TrackingSection />}
+      <RemindersSection />
       <PartnerSection />
       {isOwner && <SharingSection />}
 
@@ -210,11 +212,16 @@ function SharingSection() {
 
   async function toggle(key: keyof SharingSettings) {
     if (!settings) return;
-    const next = { ...settings, [key]: !settings[key] };
+    await set({ [key]: !settings[key] });
+  }
+
+  async function set(patch: Partial<SharingSettings>) {
+    if (!settings) return;
+    const next = { ...settings, ...patch };
     setSettings(next); // optimistic
     const { error } = await supabase
       .from("sharing_settings")
-      .update({ [key]: next[key] })
+      .update(patch)
       .eq("owner_id", settings.owner_id);
     if (error) {
       setSettings(settings); // roll back
@@ -241,6 +248,47 @@ function SharingSection() {
             />
           </label>
         ))}
+      {settings && (
+        <>
+          <label className="toggle-row">
+            <span>
+              Alert partner if pill not marked
+              <span className="muted small block">
+                Sends them a notification if today's pill isn't marked by this
+                time
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              className="switch"
+              checked={settings.partner_pill_alert}
+              onChange={() =>
+                set({
+                  partner_pill_alert: !settings.partner_pill_alert,
+                  partner_pill_alert_time:
+                    settings.partner_pill_alert_time ?? "23:00",
+                })
+              }
+            />
+          </label>
+          {settings.partner_pill_alert && (
+            <label>
+              Alert time
+              <input
+                type="time"
+                value={(settings.partner_pill_alert_time ?? "23:00").slice(
+                  0,
+                  5,
+                )}
+                onChange={(e) =>
+                  e.target.value &&
+                  set({ partner_pill_alert_time: e.target.value })
+                }
+              />
+            </label>
+          )}
+        </>
+      )}
       {error && <p className="error">{error}</p>}
     </section>
   );

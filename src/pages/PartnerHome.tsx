@@ -19,7 +19,12 @@ interface Shared {
   pillDate: string | null;
 }
 
-const EMPTY: Shared = { sharing: null, tracking: null, pillToday: null, pillDate: null };
+const EMPTY: Shared = {
+  sharing: null,
+  tracking: null,
+  pillToday: null,
+  pillDate: null,
+};
 const cacheKey = (owner: string) => `swarna.partner.${owner}`;
 
 /** Read-only view of what she has chosen to share. */
@@ -32,7 +37,9 @@ export default function PartnerHome() {
 
   const [data, setData] = useState<Shared>(() => {
     try {
-      return JSON.parse(localStorage.getItem(cacheKey(ownerId)) ?? "") as Shared;
+      return JSON.parse(
+        localStorage.getItem(cacheKey(ownerId)) ?? "",
+      ) as Shared;
     } catch {
       return EMPTY;
     }
@@ -40,16 +47,30 @@ export default function PartnerHome() {
 
   const load = useCallback(async () => {
     const [s, t, p] = await Promise.all([
-      supabase.from("sharing_settings").select("share_periods, share_pill_status").eq("owner_id", ownerId).maybeSingle(),
+      supabase
+        .from("sharing_settings")
+        .select("share_periods, share_pill_status")
+        .eq("owner_id", ownerId)
+        .maybeSingle(),
       supabase
         .from("tracking_settings")
         .select("mode, pack_start_date, active_days, break_days")
         .eq("owner_id", ownerId)
         .maybeSingle(),
-      supabase.from("pill_logs").select("taken_at, deleted").eq("owner_id", ownerId).eq("date", today).maybeSingle(),
+      supabase
+        .from("pill_logs")
+        .select("taken_at, deleted")
+        .eq("owner_id", ownerId)
+        .eq("date", today)
+        .maybeSingle(),
     ]);
     if (s.error || t.error || p.error) return; // offline: keep cached view
-    const next: Shared = { sharing: s.data, tracking: t.data, pillToday: p.data, pillDate: today };
+    const next: Shared = {
+      sharing: s.data,
+      tracking: t.data,
+      pillToday: p.data,
+      pillDate: today,
+    };
     setData(next);
     try {
       localStorage.setItem(cacheKey(ownerId), JSON.stringify(next));
@@ -62,9 +83,20 @@ export default function PartnerHome() {
   useEffect(() => {
     void load();
     const channel = supabase.channel(`partner-${ownerId}`);
-    for (const table of ["sharing_settings", "tracking_settings", "pill_logs"]) {
-      channel.on("postgres_changes", { event: "*", schema: "public", table, filter: `owner_id=eq.${ownerId}` }, () =>
-        load(),
+    for (const table of [
+      "sharing_settings",
+      "tracking_settings",
+      "pill_logs",
+    ]) {
+      channel.on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table,
+          filter: `owner_id=eq.${ownerId}`,
+        },
+        () => load(),
       );
     }
     channel.subscribe();
@@ -82,12 +114,17 @@ export default function PartnerHome() {
   const pillMode = tracking?.mode === "pill" && tracking.pack_start_date;
 
   const cfg: PackConfig | null = pillMode
-    ? { packStart: tracking.pack_start_date!, activeDays: tracking.active_days, breakDays: tracking.break_days }
+    ? {
+        packStart: tracking.pack_start_date!,
+        activeDays: tracking.active_days,
+        breakDays: tracking.break_days,
+      }
     : null;
   const todayDate = parseISO(today);
   const info = cfg ? packDay(cfg, todayDate) : null;
   const bleed = info && cfg ? expectedBleed(info, cfg) : null;
-  const takenToday = data.pillDate === today && data.pillToday && !data.pillToday.deleted;
+  const takenToday =
+    data.pillDate === today && data.pillToday && !data.pillToday.deleted;
 
   return (
     <div className="stack">
@@ -95,7 +132,9 @@ export default function PartnerHome() {
 
       {!showPeriods && !showPill && (
         <section className="card">
-          <p className="muted">{name} isn't sharing cycle or pill info with you right now.</p>
+          <p className="muted">
+            {name} isn't sharing cycle or pill info with you right now.
+          </p>
         </section>
       )}
 
@@ -114,7 +153,8 @@ export default function PartnerHome() {
                 Pill {info.number} of {cfg.activeDays}
               </p>
               <p className="muted">
-                Break starts in {differenceInCalendarDays(info.breakStart, todayDate)} days
+                Break starts in{" "}
+                {differenceInCalendarDays(info.breakStart, todayDate)} days
               </p>
             </>
           )}
@@ -124,21 +164,33 @@ export default function PartnerHome() {
               <p className="hero-text">
                 Off day {info.number} of {cfg.breakDays}
               </p>
-              <p className="muted">New pack starts {format(info.nextPackStart, "EEEE")}</p>
+              <p className="muted">
+                New pack starts {format(info.nextPackStart, "EEEE")}
+              </p>
             </>
           )}
-          {info.kind === "before" && <p className="hero-text">New pack starts {format(info.packStart, "EEE d MMM")}</p>}
-          {bleed && info.kind !== "before" && differenceInCalendarDays(bleed.end, todayDate) >= 0 && (
-            <p className="muted small">
-              Bleed expected around {format(bleed.start, "EEE d MMM")}–{format(bleed.end, "EEE d MMM")}
+          {info.kind === "before" && (
+            <p className="hero-text">
+              New pack starts {format(info.packStart, "EEE d MMM")}
             </p>
           )}
+          {bleed &&
+            info.kind !== "before" &&
+            differenceInCalendarDays(bleed.end, todayDate) >= 0 && (
+              <p className="muted small">
+                Bleed expected around {format(bleed.start, "EEE d MMM")}–
+                {format(bleed.end, "EEE d MMM")}
+              </p>
+            )}
         </section>
       )}
 
       {showPeriods && tracking?.mode === "natural" && (
         <section className="card">
-          <p className="muted">Cycle predictions will appear here once {name} starts logging periods.</p>
+          <p className="muted">
+            Cycle predictions will appear here once {name} starts logging
+            periods.
+          </p>
         </section>
       )}
 
@@ -148,7 +200,8 @@ export default function PartnerHome() {
           {takenToday ? (
             <p className="taken-badge">
               Taken ✓
-              {data.pillToday?.taken_at && ` at ${format(parseISO(data.pillToday.taken_at), "HH:mm")}`}
+              {data.pillToday?.taken_at &&
+                ` at ${format(parseISO(data.pillToday.taken_at), "HH:mm")}`}
             </p>
           ) : (
             <p>Not marked yet</p>
