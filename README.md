@@ -14,6 +14,7 @@ npm run dev                  # opens on http://localhost:5173
 
 - `VITE_SUPABASE_URL`: the project URL, e.g. `https://abcd1234.supabase.co`
 - `VITE_SUPABASE_ANON_KEY`: the **anon** / **publishable** key. Never use the `service_role` / secret key here.
+- VITE_VAPID_PUBLIC_KEY: the web push public key
 
 ## Database
 
