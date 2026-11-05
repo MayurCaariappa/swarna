@@ -31,6 +31,18 @@
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
     <title>Swarna</title>
+    <!-- Paint the right page colour on the very first frame (before CSS loads). Matches --bg in index.css. -->
+    <style>
+      html {
+        background: #ffffff;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        html {
+          background: #0f0d13;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

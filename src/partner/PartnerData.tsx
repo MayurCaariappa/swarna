@@ -137,6 +137,12 @@ export function PartnerDataProvider({ children }: { children: ReactNode }) {
   // Load now, on every change she makes (Realtime), and when the app reopens.
   useEffect(() => {
     void load();
+    // A burst of her changes (several taps in a row) → one refresh, ~300 ms later.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const soon = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => void load(), 300);
+    };
     const channel = supabase.channel(`partner-${ownerId}`);
     for (const table of [
       "sharing_settings",
@@ -153,13 +159,14 @@ export function PartnerDataProvider({ children }: { children: ReactNode }) {
           table,
           filter: `owner_id=eq.${ownerId}`,
         },
-        () => load(),
+        soon,
       );
     }
     channel.subscribe();
-    const onVisible = () => document.visibilityState === "visible" && load();
+    const onVisible = () => document.visibilityState === "visible" && soon();
     document.addEventListener("visibilitychange", onVisible);
     return () => {
+      clearTimeout(timer);
       void supabase.removeChannel(channel);
       document.removeEventListener("visibilitychange", onVisible);
     };
