@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { CloudOff } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { startSync } from "../data/sync";
@@ -24,10 +25,16 @@ export default function Layout() {
 
   return (
     <div className="app">
-      {!online && (
-        <div className="offline-pill">Offline — changes will sync later</div>
-      )}
       <main className="page">
+        {/* Part of the page (pushes content down) rather than floating over it. */}
+        {!online && (
+          <div className="offline-bar" role="status">
+            <CloudOff size={15} strokeWidth={2.4} aria-hidden />
+            {isOwner
+              ? "Offline · your changes will sync later"
+              : "Offline · showing the last update"}
+          </div>
+        )}
         {isOwner ? (
           <Outlet />
         ) : (

@@ -917,19 +917,31 @@ a.btn {
   background: var(--nav-dot);
 }
 
-.offline-pill {
-  position: fixed;
-  top: calc(var(--safe-top) + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 25;
+.offline-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin: -8px auto 14px;
   background: var(--b-butter);
   color: var(--ink);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  padding: 6px 14px;
+  padding: 7px 14px;
   border-radius: 999px;
-  white-space: nowrap;
+  animation: offline-in 0.2s ease-out;
+}
+@keyframes offline-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .offline-bar {
+    animation: none;
+  }
 }
 
 .toast {
@@ -1515,7 +1527,12 @@ details[open] summary {
   font-size: 0.94rem;
   font-weight: 600;
 }
-.page-sub { font-size: 0.95rem; font-weight: 600; color: var(--muted); margin-top: 2px; }
+.page-sub {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 2px;
+}
 
 /* Exercise types: a lighter second row tucked under "Exercise". */
 .sheet-body .sub-row {
