@@ -1,4 +1,4 @@
-import type { Session } from "@supabase/supabase-js";
+import { isAuthRetryableFetchError, type Session } from "@supabase/supabase-js";
 import {
   createContext,
   useCallback,
@@ -33,6 +33,7 @@ const EMPTY: Account = { profile: null, link: null, counterpart: null };
 
 // The account is cached on the phone so the app opens instantly — and offline.
 const cacheKey = (uid: string) => `swarna.account.${uid}`;
+const SESSION_KEY = "swarna.auth"; // matches storageKey in lib/supabase.ts
 
 function readCache(uid: string): Account | null {
   try {
@@ -81,10 +82,33 @@ async function fetchAccount(uid: string): Promise<Account> {
   return { profile, link, counterpart };
 }
 
+/**
+ * The login saved on this phone, read directly (no network). getSession()
+ * waits to renew an expired token online — slow, and offline it fails — so
+ * we open the app from this and let Supabase renew in the background.
+ */
+function storedSession(): Session | null {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw) as Session;
+    return s?.access_token && s.refresh_token && s.user?.id ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+// Read once at startup: a saved login plus a cached account = open instantly.
+const boot = supabaseConfigured ? storedSession() : null;
+const bootAccount = boot ? readCache(boot.user.id) : null;
+const instant = Boolean(boot && bootAccount);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [account, setAccount] = useState<Account>(EMPTY);
-  const [loading, setLoading] = useState(supabaseConfigured);
+  const [session, setSession] = useState<Session | null>(
+    instant ? boot : null,
+  );
+  const [account, setAccount] = useState<Account>(bootAccount ?? EMPTY);
+  const [loading, setLoading] = useState(supabaseConfigured && !instant);
 
   const uid = session?.user.id;
 
@@ -101,24 +125,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Track sign-in state.
   useEffect(() => {
     if (!supabaseConfigured) return;
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data, error }) => {
       const s = data.session;
-      setSession(s);
       if (s) {
+        setSession(s);
         const cached = readCache(s.user.id);
         if (cached) setAccount(cached);
         // If we have a cache, show the app right away and refresh in the background.
         if (cached) setLoading(false);
         load(s.user.id).finally(() => setLoading(false));
+      } else if (boot && error && isAuthRetryableFetchError(error)) {
+        // Offline and the token couldn't be renewed: stay signed in with the
+        // saved login. Supabase retries the renewal once we're back online.
+        setSession(boot);
+        if (bootAccount) setAccount(bootAccount);
+        setLoading(false);
       } else {
+        setSession(null);
         setLoading(false);
       }
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
-      setSession(s);
+      // Only a real sign-out logs us out; a failed renewal while offline doesn't.
+      if (s) setSession(s);
       if (event === "SIGNED_IN" && s) load(s.user.id);
-      if (event === "SIGNED_OUT") setAccount(EMPTY);
+      if (event === "SIGNED_OUT") {
+        setSession(null);
+        setAccount(EMPTY);
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, [load]);
