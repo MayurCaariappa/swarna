@@ -156,7 +156,7 @@ export interface MonthRow {
   loggedDays: number;
   acneDays: number;
   hairDays: number;
-  lowMoodDays: number; // low / sad / irritable
+  lowMoodDays: number; // low / sad / irritable / anxious
   avgWeight: number | null;
 }
 
@@ -182,7 +182,11 @@ export function monthlyTrends(
       hairDays: inMonth.filter((l) => l.symptoms.includes("hair_changes"))
         .length,
       lowMoodDays: inMonth.filter(
-        (l) => l.mood === "low" || l.mood === "sad" || l.mood === "irritable",
+        (l) =>
+          l.mood === "low" ||
+          l.mood === "sad" ||
+          l.mood === "irritable" ||
+          l.mood === "anxious",
       ).length,
       avgWeight: round1(mean(weights)),
     });

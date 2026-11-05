@@ -26,6 +26,7 @@ export interface SharingSettings {
   share_pill_status: boolean;
   share_mood: boolean;
   share_energy: boolean;
+  share_exercise: boolean;
   share_symptoms: boolean;
   share_sex: boolean;
   share_notes: boolean;

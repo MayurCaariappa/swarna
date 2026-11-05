@@ -1516,3 +1516,19 @@ details[open] summary {
   font-weight: 600;
 }
 .page-sub { font-size: 0.95rem; font-weight: 600; color: var(--muted); margin-top: 2px; }
+
+/* Exercise types: a lighter second row tucked under "Exercise". */
+.sheet-body .sub-row {
+  margin-top: -12px;
+}
+.sub-row .tap-chip {
+  font-size: 0.85rem;
+  min-height: 40px;
+  padding: 8px 14px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--surface);
+}
+.sub-row .tap-chip.on {
+  background: var(--primary);
+  box-shadow: none;
+}

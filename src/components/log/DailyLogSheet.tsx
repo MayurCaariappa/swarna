@@ -3,7 +3,16 @@ import { useEffect, useRef, useState } from "react";
 import { saveDailyLog } from "../../data/actions";
 import { EMPTY_DAILY_LOG, type DailyLogFields } from "../../data/db";
 import { useDailyLog } from "../../data/hooks";
-import { DISCHARGE, ENERGY, FLOWS, MOODS, SEX, SYMPTOMS } from "../../lib/dailyLog";
+import {
+  DISCHARGE,
+  ENERGY,
+  EXERCISE,
+  EXERCISE_TYPES,
+  FLOWS,
+  MOODS,
+  SEX,
+  SYMPTOMS,
+} from "../../lib/dailyLog";
 
 interface Props {
   ownerId: string;
@@ -14,15 +23,44 @@ interface Props {
 /** Full-screen sheet: tap to log a day. Every tap saves; nothing is required. */
 export default function DailyLogSheet({ ownerId, date, onClose }: Props) {
   const row = useDailyLog(ownerId, date);
-  const log: DailyLogFields = row ? { ...EMPTY_DAILY_LOG, ...row } : EMPTY_DAILY_LOG;
-  const save = (patch: Partial<DailyLogFields>) => saveDailyLog(ownerId, date, patch);
+  const log: DailyLogFields = row
+    ? { ...EMPTY_DAILY_LOG, ...row }
+    : EMPTY_DAILY_LOG;
+  const save = (patch: Partial<DailyLogFields>) =>
+    saveDailyLog(ownerId, date, patch);
 
   // Tap the selected option again to clear it.
-  const pick = <K extends keyof DailyLogFields>(key: K, value: DailyLogFields[K]) =>
-    save({ [key]: log[key] === value ? null : value } as Partial<DailyLogFields>);
+  const pick = <K extends keyof DailyLogFields>(
+    key: K,
+    value: DailyLogFields[K],
+  ) =>
+    save({
+      [key]: log[key] === value ? null : value,
+    } as Partial<DailyLogFields>);
 
   const toggleSymptom = (s: string) =>
-    save({ symptoms: log.symptoms.includes(s) ? log.symptoms.filter((x) => x !== s) : [...log.symptoms, s] });
+    save({
+      symptoms: log.symptoms.includes(s)
+        ? log.symptoms.filter((x) => x !== s)
+        : [...log.symptoms, s],
+    });
+
+  // Picking a workout type on a blank day also implies "not a rest day".
+  const toggleExerciseType = (t: string) => {
+    const types = log.exercise_types.includes(t)
+      ? log.exercise_types.filter((x) => x !== t)
+      : [...log.exercise_types, t];
+    save({
+      exercise_types: types,
+      ...(types.length && log.exercise === "rest" ? { exercise: null } : {}),
+    });
+  };
+  const pickExercise = (v: (typeof EXERCISE)[number]["value"]) =>
+    save(
+      v === "rest" && log.exercise !== "rest"
+        ? { exercise: "rest", exercise_types: [] } // a rest day has no workouts
+        : { exercise: log.exercise === v ? null : v },
+    );
 
   // Text fields save shortly after typing stops, and on close.
   const [notes, setNotes] = useState("");
@@ -68,7 +106,12 @@ export default function DailyLogSheet({ ownerId, date, onClose }: Props) {
   if (row === undefined) return null;
 
   return (
-    <div className="sheet" role="dialog" aria-modal="true" aria-label="Daily log">
+    <div
+      className="sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Daily log"
+    >
       <div className="sheet-head">
         <h2>{format(parseISO(date), "EEEE d MMMM")}</h2>
         <button className="btn link" onClick={() => history.back()}>
@@ -79,7 +122,11 @@ export default function DailyLogSheet({ ownerId, date, onClose }: Props) {
       <div className="sheet-body stack">
         <Group title="Flow">
           {FLOWS.map((o) => (
-            <Chip key={o.value} on={log.flow === o.value} onClick={() => pick("flow", o.value)}>
+            <Chip
+              key={o.value}
+              on={log.flow === o.value}
+              onClick={() => pick("flow", o.value)}
+            >
               {o.label}
             </Chip>
           ))}
@@ -87,7 +134,11 @@ export default function DailyLogSheet({ ownerId, date, onClose }: Props) {
 
         <Group title="Symptoms">
           {SYMPTOMS.map((o) => (
-            <Chip key={o.value} on={log.symptoms.includes(o.value)} onClick={() => toggleSymptom(o.value)}>
+            <Chip
+              key={o.value}
+              on={log.symptoms.includes(o.value)}
+              onClick={() => toggleSymptom(o.value)}
+            >
               {o.label}
             </Chip>
           ))}
@@ -95,7 +146,11 @@ export default function DailyLogSheet({ ownerId, date, onClose }: Props) {
 
         <Group title="Mood">
           {MOODS.map((o) => (
-            <Chip key={o.value} on={log.mood === o.value} onClick={() => pick("mood", o.value)}>
+            <Chip
+              key={o.value}
+              on={log.mood === o.value}
+              onClick={() => pick("mood", o.value)}
+            >
               <span className="emoji">{o.emoji}</span> {o.label}
             </Chip>
           ))}
@@ -103,7 +158,11 @@ export default function DailyLogSheet({ ownerId, date, onClose }: Props) {
 
         <Group title="Energy">
           {ENERGY.map((o) => (
-            <Chip key={o.value} on={log.energy === o.value} onClick={() => pick("energy", o.value)}>
+            <Chip
+              key={o.value}
+              on={log.energy === o.value}
+              onClick={() => pick("energy", o.value)}
+            >
               <span className="bars" aria-hidden>
                 {"▁▃▅▇".slice(0, o.value)}
               </span>{" "}
@@ -112,9 +171,38 @@ export default function DailyLogSheet({ ownerId, date, onClose }: Props) {
           ))}
         </Group>
 
+        <Group title="Exercise">
+          {EXERCISE.map((o) => (
+            <Chip
+              key={o.value}
+              on={log.exercise === o.value}
+              onClick={() => pickExercise(o.value)}
+            >
+              {o.label}
+            </Chip>
+          ))}
+        </Group>
+        {log.exercise !== "rest" && (
+          <div className="chip-row sub-row" aria-label="Type of exercise">
+            {EXERCISE_TYPES.map((o) => (
+              <Chip
+                key={o.value}
+                on={log.exercise_types.includes(o.value)}
+                onClick={() => toggleExerciseType(o.value)}
+              >
+                {o.label}
+              </Chip>
+            ))}
+          </div>
+        )}
+
         <Group title="Discharge" hint="Private — never shared">
           {DISCHARGE.map((o) => (
-            <Chip key={o.value} on={log.discharge === o.value} onClick={() => pick("discharge", o.value)}>
+            <Chip
+              key={o.value}
+              on={log.discharge === o.value}
+              onClick={() => pick("discharge", o.value)}
+            >
               {o.label}
             </Chip>
           ))}
@@ -122,7 +210,11 @@ export default function DailyLogSheet({ ownerId, date, onClose }: Props) {
 
         <Group title="Sex">
           {SEX.map((o) => (
-            <Chip key={o.value} on={log.sex === o.value} onClick={() => pick("sex", o.value)}>
+            <Chip
+              key={o.value}
+              on={log.sex === o.value}
+              onClick={() => pick("sex", o.value)}
+            >
               {o.label}
             </Chip>
           ))}
@@ -144,7 +236,8 @@ export default function DailyLogSheet({ ownerId, date, onClose }: Props) {
               setWeight(e.target.value);
               const n = Number(e.target.value);
               if (e.target.value === "") queue({ weight_kg: null });
-              else if (n >= 20 && n <= 300) queue({ weight_kg: Math.round(n * 10) / 10 });
+              else if (n >= 20 && n <= 300)
+                queue({ weight_kg: Math.round(n * 10) / 10 });
             }}
           />
         </label>
@@ -163,13 +256,23 @@ export default function DailyLogSheet({ ownerId, date, onClose }: Props) {
           />
         </label>
 
-        <p className="muted small center">Saved automatically. Tap a selected option again to clear it.</p>
+        <p className="muted small center">
+          Saved automatically. Tap a selected option again to clear it.
+        </p>
       </div>
     </div>
   );
 }
 
-function Group({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+function Group({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="group">
       <p className="group-title">
@@ -180,9 +283,22 @@ function Group({ title, hint, children }: { title: string; hint?: string; childr
   );
 }
 
-function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+function Chip({
+  on,
+  onClick,
+  children,
+}: {
+  on: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
-    <button type="button" className={`tap-chip ${on ? "on" : ""}`} aria-pressed={on} onClick={onClick}>
+    <button
+      type="button"
+      className={`tap-chip ${on ? "on" : ""}`}
+      aria-pressed={on}
+      onClick={onClick}
+    >
       {children}
     </button>
   );

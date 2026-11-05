@@ -1,4 +1,11 @@
-import { energyLabel, flowLabel, moodLabel, sexLabel, symptomLabel } from "../../lib/dailyLog";
+import {
+  energyLabel,
+  exerciseLabel,
+  flowLabel,
+  moodLabel,
+  sexLabel,
+  symptomLabel,
+} from "../../lib/dailyLog";
 
 /** Any day's log — her full entry or the partner's shared copy. */
 interface LogLike {
@@ -6,6 +13,8 @@ interface LogLike {
   symptoms: string[] | null;
   mood: string | null;
   energy: number | null;
+  exercise?: string | null;
+  exercise_types?: string[] | null;
   sex: string | null;
   notes: string | null;
   weight_kg?: number | null;
@@ -20,6 +29,11 @@ export default function LogSummary({ log }: { log: LogLike }) {
   if (mood) items.push(mood);
   const energy = energyLabel(log.energy);
   if (energy) items.push(`Energy: ${energy}`);
+  const exercise = exerciseLabel(
+    log.exercise ?? null,
+    log.exercise_types ?? null,
+  );
+  if (exercise) items.push(`Exercise: ${exercise}`);
   for (const s of log.symptoms ?? []) items.push(symptomLabel(s));
   const sex = sexLabel(log.sex);
   if (sex) items.push(`Sex: ${sex}`);
@@ -36,7 +50,9 @@ export default function LogSummary({ log }: { log: LogLike }) {
           ))}
         </div>
       )}
-      {log.notes?.trim() && <p className="small note-text">“{log.notes.trim()}”</p>}
+      {log.notes?.trim() && (
+        <p className="small note-text">“{log.notes.trim()}”</p>
+      )}
     </div>
   );
 }

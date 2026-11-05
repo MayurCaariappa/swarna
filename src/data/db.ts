@@ -40,7 +40,15 @@ export interface PeriodRow {
 }
 
 export type Flow = "spotting" | "light" | "medium" | "heavy";
-export type Mood = "happy" | "calm" | "okay" | "low" | "sad" | "irritable";
+export type Mood =
+  | "happy"
+  | "calm"
+  | "okay"
+  | "low"
+  | "sad"
+  | "irritable"
+  | "anxious";
+export type Exercise = "rest" | "light" | "moderate" | "intense";
 export type Discharge = "none" | "sticky" | "creamy" | "watery" | "egg-white";
 export type Sex = "none" | "protected" | "unprotected";
 
@@ -51,6 +59,8 @@ export interface DailyLogRow {
   symptoms: string[];
   mood: Mood | null;
   energy: number | null; // 1 low … 4 high
+  exercise: Exercise | null;
+  exercise_types: string[];
   discharge: Discharge | null;
   sex: Sex | null;
   weight_kg: number | null;
@@ -60,13 +70,18 @@ export interface DailyLogRow {
   dirty: 0 | 1;
 }
 
-export type DailyLogFields = Omit<DailyLogRow, "owner_id" | "date" | "deleted" | "updated_at" | "dirty">;
+export type DailyLogFields = Omit<
+  DailyLogRow,
+  "owner_id" | "date" | "deleted" | "updated_at" | "dirty"
+>;
 
 export const EMPTY_DAILY_LOG: DailyLogFields = {
   flow: null,
   symptoms: [],
   mood: null,
   energy: null,
+  exercise: null,
+  exercise_types: [],
   discharge: null,
   sex: null,
   weight_kg: null,

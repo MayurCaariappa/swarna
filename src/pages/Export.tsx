@@ -145,7 +145,8 @@ export default function Export() {
       <section className="card stack">
         <h2>Include</h2>
         <p className="muted small">
-          Periods, pills, symptoms, mood, energy and weight are always included.
+          Periods, pills, symptoms, mood, energy, exercise and weight are always
+          included.
         </p>
         <Toggle
           label="Notes"

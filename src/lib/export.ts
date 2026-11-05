@@ -4,6 +4,7 @@ import { periodOn } from "./cycle";
 import {
   DISCHARGE,
   energyLabel,
+  exerciseLabel,
   flowLabel,
   MOODS,
   sexLabel,
@@ -58,6 +59,7 @@ export interface DayRow {
   symptoms: string;
   mood: string;
   energy: string;
+  exercise: string;
   discharge: string;
   sex: string;
   weight: string;
@@ -93,6 +95,8 @@ export function dayRows(d: ExportData, o: ExportOptions): DayRow[] {
       symptoms: (log?.symptoms ?? []).map(symptomLabel).join("; "),
       mood: moodText(log?.mood ?? null),
       energy: energyLabel(log?.energy ?? null) ?? "",
+      exercise:
+        exerciseLabel(log?.exercise ?? null, log?.exercise_types ?? null) ?? "",
       discharge: o.includeDischarge
         ? dischargeText(log?.discharge ?? null)
         : "",
@@ -134,6 +138,7 @@ export function dailyCsv(d: ExportData, o: ExportOptions): string {
     ["symptoms", "Symptoms"],
     ["mood", "Mood"],
     ["energy", "Energy"],
+    ["exercise", "Exercise"],
     ...(o.includeDischarge
       ? ([["discharge", "Discharge"]] as [keyof DayRow, string][])
       : []),
@@ -363,6 +368,7 @@ export async function buildPdf(d: ExportData, o: ExportOptions): Promise<Blob> {
       r.symptoms ||
       r.mood ||
       r.energy ||
+      r.exercise ||
       r.weight ||
       r.notes ||
       r.sex ||
@@ -379,6 +385,7 @@ export async function buildPdf(d: ExportData, o: ExportOptions): Promise<Blob> {
       ["symptoms", "Symptoms"],
       ["mood", "Mood"],
       ["energy", "Energy"],
+      ["exercise", "Exercise"],
       ...(o.includeDischarge
         ? ([["discharge", "Discharge"]] as [keyof DayRow, string][])
         : []),

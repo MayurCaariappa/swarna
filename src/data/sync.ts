@@ -53,7 +53,7 @@ const SPECS: Spec[] = [
     local: db.dailyLogs,
     onConflict: "owner_id,date",
     columns:
-      "owner_id, date, flow, symptoms, mood, energy, discharge, sex, weight_kg, notes, deleted, updated_at, synced_at",
+      "owner_id, date, flow, symptoms, mood, energy, exercise, exercise_types, discharge, sex, weight_kg, notes, deleted, updated_at, synced_at",
     key: (r) => [r.owner_id, r.date],
   },
 ];

@@ -16,6 +16,10 @@ export const SYMPTOMS = [
   { value: "back_pain", label: "Back pain" },
   { value: "fatigue", label: "Fatigue" },
   { value: "hair_changes", label: "Hair changes" },
+  { value: "cravings", label: "Cravings" },
+  { value: "nausea", label: "Nausea" },
+  { value: "trouble_sleeping", label: "Trouble sleeping" },
+  { value: "upset_stomach", label: "Upset stomach" },
 ] as const;
 
 export const MOODS = [
@@ -25,6 +29,7 @@ export const MOODS = [
   { value: "low", emoji: "😔", label: "Low" },
   { value: "sad", emoji: "😢", label: "Sad" },
   { value: "irritable", emoji: "😠", label: "Irritable" },
+  { value: "anxious", emoji: "😟", label: "Anxious" },
 ] as const;
 
 export const ENERGY = [
@@ -32,6 +37,22 @@ export const ENERGY = [
   { value: 2, label: "OK" },
   { value: 3, label: "Good" },
   { value: 4, label: "High" },
+] as const;
+
+export const EXERCISE = [
+  { value: "rest", label: "Rest day" },
+  { value: "light", label: "Light" },
+  { value: "moderate", label: "Moderate" },
+  { value: "intense", label: "Intense" },
+] as const;
+
+export const EXERCISE_TYPES = [
+  { value: "walk", label: "Walk" },
+  { value: "yoga", label: "Yoga" },
+  { value: "pilates", label: "Pilates" },
+  { value: "strength", label: "Strength" },
+  { value: "cardio", label: "Cardio" },
+  { value: "other", label: "Other" },
 ] as const;
 
 export const DISCHARGE = [
@@ -48,7 +69,8 @@ export const SEX = [
   { value: "unprotected", label: "Unprotected" },
 ] as const;
 
-const find = <T extends { value: unknown }>(list: readonly T[], v: unknown) => list.find((x) => x.value === v);
+const find = <T extends { value: unknown }>(list: readonly T[], v: unknown) =>
+  list.find((x) => x.value === v);
 
 export const flowLabel = (v: string | null) => find(FLOWS, v)?.label ?? null;
 export const symptomLabel = (v: string) => find(SYMPTOMS, v)?.label ?? v;
@@ -57,4 +79,12 @@ export const moodLabel = (v: string | null) => {
   return m ? `${m.emoji} ${m.label}` : null;
 };
 export const energyLabel = (v: number | null) => find(ENERGY, v)?.label ?? null;
+/** "Moderate · Yoga, Walk" — null if nothing logged. */
+export const exerciseLabel = (level: string | null, types: string[] | null) => {
+  const parts = [
+    find(EXERCISE, level)?.label,
+    (types ?? []).map((t) => find(EXERCISE_TYPES, t)?.label ?? t).join(", "),
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : null;
+};
 export const sexLabel = (v: string | null) => find(SEX, v)?.label ?? null;

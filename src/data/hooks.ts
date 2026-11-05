@@ -79,6 +79,8 @@ export function hasContent(r: DailyLogFields) {
     r.symptoms.length ||
     r.mood ||
     r.energy ||
+    r.exercise ||
+    r.exercise_types?.length ||
     r.discharge ||
     r.sex ||
     r.weight_kg ||

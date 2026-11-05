@@ -39,6 +39,8 @@ export interface SharedDayLog {
   symptoms: string[] | null;
   mood: string | null;
   energy: number | null;
+  exercise: string | null;
+  exercise_types: string[] | null;
   sex: string | null;
   notes: string | null;
 }
@@ -106,7 +108,9 @@ export function PartnerDataProvider({ children }: { children: ReactNode }) {
         .gte("date", since),
       supabase
         .from("shared_daily_logs")
-        .select("date, flow, symptoms, mood, energy, sex, notes")
+        .select(
+          "date, flow, symptoms, mood, energy, exercise, exercise_types, sex, notes",
+        )
         .eq("owner_id", ownerId)
         .gte("date", since),
     ]);

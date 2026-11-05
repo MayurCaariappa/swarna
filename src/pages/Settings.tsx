@@ -204,6 +204,7 @@ const SHARE_OPTIONS: {
   },
   { key: "share_mood", label: "Mood" },
   { key: "share_energy", label: "Energy" },
+  { key: "share_exercise", label: "Exercise" },
   { key: "share_symptoms", label: "Symptoms" },
   { key: "share_sex", label: "Sex" },
   { key: "share_notes", label: "Notes" },

@@ -33,7 +33,7 @@ export default function WelcomeCard() {
 
   return (
     <section className="card welcome stack">
-      <h2>Welcome to Swarna 💛</h2>
+      <h2>Welcome to Swarna 💜</h2>
       {isOwner ? (
         <ul className="welcome-list">
           <li>
@@ -71,7 +71,7 @@ export default function WelcomeCard() {
           </li>
         </ul>
       )}
-      <button className="btn primary" onClick={dismiss}>
+      <button className="btn ink" onClick={dismiss}>
         Got it
       </button>
     </section>
