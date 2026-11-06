@@ -91,21 +91,21 @@ export default function Stats() {
           value={summary.avgCycle}
           unit="days"
           label={pillMode ? "avg bleed-to-bleed" : "avg cycle"}
-          empty={pillMode ? "needs 2 break-week bleeds" : "needs 2 periods"}
+          empty={pillMode ? "Needs 2 break-week bleeds" : "Needs 2 periods"}
         />
         <Tile
           value={summary.avgBleed}
           unit="days"
           label="avg bleed"
-          empty="needs an ended period"
+          empty="Needs an ended period"
         />
         <Tile
           value={summary.regularity ? REGULARITY[summary.regularity] : null}
-          label={
-            summary.variation !== null
-              ? `±${summary.variation} days`
-              : "regularity"
+          unit={
+            summary.variation !== null ? `±${summary.variation} d` : undefined
           }
+          label="regularity"
+          empty={pillMode ? "Needs 3 break-week bleeds" : "Needs 3 periods"}
         />
         <Tile
           value={summary.periodsLogged + breakthrough}
@@ -285,14 +285,24 @@ function Tile({
   /** Why there's no value yet, e.g. "needs 2 periods". */
   empty?: string;
 }) {
+  // Two parts in every tile — label on top, value at the bottom. With no value
+  // yet, the reason takes the value's place (no extra line), so tiles in a row
+  // always match.
   return (
     <div className="tile-stat">
-      <p className="stat">
-        {value ?? "–"}
-        {value !== null && unit && <span className="unit"> {unit}</span>}
-      </p>
-      <p className="muted small">{label}</p>
-      {value === null && empty && <p className="muted tiny">{empty}</p>}
+      <p className="tile-stat-label">{label}</p>
+      {value === null ? (
+        <p className="tile-stat-value empty">
+          {empty ?? "Not enough data yet"}
+        </p>
+      ) : (
+        <p className="tile-stat-value">
+          <span className={`stat${typeof value === "string" ? " word" : ""}`}>
+            {value}
+          </span>
+          {unit && <span className="unit">{unit}</span>}
+        </p>
+      )}
     </div>
   );
 }

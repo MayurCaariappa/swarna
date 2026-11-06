@@ -1243,7 +1243,8 @@ a.btn {
    the whole cell (which dropped contrast to ~2:1). */
 .cal-day.out {
   color: var(--muted);
-  font-weight: 600;
+  font-weight: 400; /* lighter + muted: still ≥ 5:1, but clearly not this month */
+  font-size: 0.85rem;
 }
 .cal-day.out.off,
 .cal-day.out.fertile,
@@ -1511,7 +1512,29 @@ a.history-row:active {
   color: var(--ink);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px; /* value sits right under its label */
+}
+.tile-stat-label {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--blk-ink);
+}
+/* Fixed-height value slot: a number or the "needs …" reason, bottom-aligned. */
+.tile-stat-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 5px;
+  min-height: 1.9rem;
+}
+.tile-stat-value.empty {
+  align-items: flex-start; /* starts right under the label, however it wraps */
+  padding-top: 2px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--blk-ink);
+  opacity: 0.85;
 }
 .tile-stat:nth-child(1) {
   background: var(--b-lilac);
@@ -1530,7 +1553,11 @@ a.history-row:active {
   --blk-ink: var(--b-butter-ink);
 }
 .tile-stat .stat {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
+  line-height: 1.15;
+}
+.tile-stat .stat.word {
+  font-size: 1.2rem; /* "Fairly regular" fits a half-width tile */
 }
 .tile-stat .muted {
   color: var(--blk-ink);
