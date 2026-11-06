@@ -18,18 +18,35 @@ export default function Login() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    setBusy(true);
     setError("");
     setInfo("");
+    // Our own checks with a visible message (the browser's pop-up bubbles are
+    // easy to miss, and often don't show in the installed app).
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+      setError("Enter your email address.");
+      return;
+    }
+    if (mode !== "reset" && !password) {
+      setError("Enter your password.");
+      return;
+    }
+    if (mode === "signup" && password.length < 8) {
+      setError("Choose a password with at least 8 characters.");
+      return;
+    }
+    setBusy(true);
     try {
       if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: email.trim(),
           password,
         });
         if (error) throw error;
       } else if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+        });
         if (error) throw error;
         if (!data.session) {
           setInfo(
@@ -38,9 +55,12 @@ export default function Login() {
           setMode("signin");
         }
       } else {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${location.origin}/`,
-        });
+        const { error } = await supabase.auth.resetPasswordForEmail(
+          email.trim(),
+          {
+            redirectTo: `${location.origin}/`,
+          },
+        );
         if (error) throw error;
         setInfo("If that email has an account, a reset link is on its way.");
         setMode("signin");
@@ -68,7 +88,7 @@ export default function Login() {
         </Link>
       )}
 
-      <form className="card stack" onSubmit={submit}>
+      <form className="card stack" onSubmit={submit} noValidate>
         {mode !== "reset" && (
           <div className="segmented">
             <button
@@ -93,6 +113,9 @@ export default function Login() {
           <input
             type="email"
             autoComplete="email"
+            autoCapitalize="none"
+            inputMode="email"
+            enterKeyHint={mode === "reset" ? "send" : "next"}
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -107,7 +130,8 @@ export default function Login() {
               autoComplete={
                 mode === "signup" ? "new-password" : "current-password"
               }
-              minLength={8}
+              minLength={mode === "signup" ? 8 : undefined}
+              enterKeyHint="go"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -115,10 +139,14 @@ export default function Login() {
           </label>
         )}
 
-        {error && <p className="error">{error}</p>}
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
         {info && <p className="info">{info}</p>}
 
-        <button className="btn primary" disabled={busy}>
+        <button type="submit" className="btn primary" disabled={busy}>
           {busy
             ? "Please wait…"
             : mode === "signin"
