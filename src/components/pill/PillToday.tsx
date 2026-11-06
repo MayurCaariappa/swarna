@@ -5,11 +5,14 @@ import { useSearchParams } from "react-router-dom";
 import { setPillTaken } from "../../data/actions";
 import type { TrackingRow } from "../../data/db";
 import { usePeriods, usePillLogs } from "../../data/hooks";
+import { periodOn } from "../../lib/cycle";
 import {
+  bleedKind,
   calibrateBleed,
   expectedBleed,
   packDay,
   packDays,
+  toISODate,
   type PackConfig,
 } from "../../lib/pill";
 import PackBars, { type BarState } from "../ui/PackBars";
@@ -55,6 +58,12 @@ export default function PillToday({
   );
   const todayDate = parseISO(today);
   const info = packDay(cfg, todayDate);
+  const bleeding = periods ? periodOn(periods, today, today) : undefined;
+  const bleedDay = bleeding
+    ? differenceInCalendarDays(todayDate, parseISO(bleeding.start_date)) + 1
+    : 0;
+  const breakthrough =
+    bleeding && bleedKind(cfg, bleeding.start_date) === "breakthrough";
 
   const [params] = useSearchParams();
   const fromReminder = params.has("take");
@@ -92,6 +101,8 @@ export default function PillToday({
 
   const bars: BarState[] = current.map((d) => {
     if (info.kind === "before") return d.kind === "off" ? "brk" : "todo";
+    if (d.date === today && d.kind === "active")
+      return currentLogs?.has(d.date) ? "nowdone" : "now";
     if (d.date === today) return "now";
     if (d.kind === "off") return d.predictedBleed ? "bleed" : "brk";
     if (d.date < today) return currentLogs?.has(d.date) ? "done" : "miss";
@@ -114,12 +125,14 @@ export default function PillToday({
     <>
       <section className="blk blk-lilac" aria-label="Pill pack today">
         <div className="blk-head">
-          <span className="blk-chip">
-            {info.kind === "active"
-              ? "Active pills"
-              : info.kind === "off"
-                ? "Break week"
-                : "New pack soon"}
+          <span className={`blk-chip ${bleeding ? "bleed" : ""}`}>
+            {bleeding
+              ? `Bleeding · day ${bleedDay}`
+              : info.kind === "active"
+                ? "Active pills"
+                : info.kind === "off"
+                  ? "Break week"
+                  : "New pack soon"}
           </span>
           <span className="blk-line">Pack since {short(info.packStart)}</span>
         </div>
@@ -150,6 +163,13 @@ export default function PillToday({
 
         {lineParts.length > 0 && (
           <p className="blk-line">{lineParts.join(" · ")}</p>
+        )}
+        {breakthrough && (
+          <p className="blk-line">
+            Bleeding between breaks (spotting or breakthrough bleeding) is
+            common, especially in the first months on the pill. If it's heavy
+            or keeps happening, check your pack leaflet or talk to your doctor.
+          </p>
         )}
 
         {info.kind === "active" &&
@@ -193,7 +213,9 @@ export default function PillToday({
                   : "Earlier pack"}
             </h2>
             <p className="muted small">
-              Tap a past pill to mark it · started {day(shownStart)}
+              {toISODate(shownStart) > today
+                ? `Starts ${day(shownStart)}`
+                : `Tap a past pill to mark it · started ${day(shownStart)}`}
             </p>
           </div>
           <div className="pager">

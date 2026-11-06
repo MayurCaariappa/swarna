@@ -1,7 +1,6 @@
-import { ChevronRight } from "lucide-react";
-import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import Disclaimer from "../components/Disclaimer";
+import InviteHint from "../components/InviteHint";
 import WelcomeCard from "../components/WelcomeCard";
 import PageHeader from "../components/ui/PageHeader";
 import LogTodayCard from "../components/log/LogTodayCard";
@@ -58,17 +57,7 @@ export default function Today() {
       )}
 
       {/* The hint and disclaimer wait for the hero, so they don't jump down when it appears. */}
-      {ready && !link && (
-        <Link to="/settings" className="card hint row-between">
-          <span>
-            <strong>Invite your partner</strong>
-            <span className="muted small block">
-              Share only what you choose
-            </span>
-          </span>
-          <ChevronRight size={18} />
-        </Link>
-      )}
+      {ready && !link && <InviteHint ownerId={ownerId} />}
 
       {ready && <Disclaimer />}
     </div>

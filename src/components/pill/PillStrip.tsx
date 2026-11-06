@@ -2,6 +2,7 @@ import { format, parseISO } from "date-fns";
 import type { PillLogRow } from "../../data/db";
 import { setPillTaken } from "../../data/actions";
 import type { StripDay } from "../../lib/pill";
+import { useToast } from "../ui/Toast";
 
 interface Props {
   ownerId: string;
@@ -12,6 +13,7 @@ interface Props {
 
 /** The pill-strip grid: taken / missed / today / upcoming / off days. */
 export default function PillStrip({ ownerId, days, logs, today }: Props) {
+  const toast = useToast();
   return (
     <div className="strip" role="group" aria-label="Pill strip">
       {days.map((d) => {
@@ -31,7 +33,13 @@ export default function PillStrip({ ownerId, days, logs, today }: Props) {
             disabled={!canToggle}
             aria-label={label}
             title={label}
-            onClick={() => setPillTaken(ownerId, d.date, !taken)}
+            onClick={async () => {
+              await setPillTaken(ownerId, d.date, !taken);
+              const what = `Pill ${d.number} (${format(parseISO(d.date), "d MMM")})`;
+              toast(taken ? `${what} unmarked` : `${what} marked taken`, () =>
+                setPillTaken(ownerId, d.date, taken),
+              );
+            }}
           >
             {state === "taken" ? "✓" : state === "missed" ? "!" : d.kind === "active" ? d.number : ""}
           </button>

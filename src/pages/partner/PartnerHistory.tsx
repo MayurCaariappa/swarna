@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import CycleChart from "../../components/stats/CycleChart";
 import { cycleLengths } from "../../lib/cycle";
+import { bleedKind } from "../../lib/pill";
 import { completedCycles, symptomPatterns } from "../../lib/stats";
 import { usePartnerData } from "../../partner/PartnerData";
 
@@ -15,7 +16,19 @@ const avg = (xs: number[]) =>
 
 /** "Periods" tab: every logged bleed with start, end, length, and averages. */
 export default function PartnerHistory() {
-  const { ownerName, sharing, periods, logs } = usePartnerData();
+  const { ownerName, sharing, periods: all, logs, tracking } = usePartnerData();
+  // On the pill, breakthrough bleeds (mid-pack) aren't a new cycle.
+  const cfg =
+    tracking?.mode === "pill" && tracking.pack_start_date
+      ? {
+          packStart: tracking.pack_start_date,
+          activeDays: tracking.active_days,
+          breakDays: tracking.break_days,
+        }
+      : null;
+  const isBreakthrough = (start: string) =>
+    cfg !== null && bleedKind(cfg, start) === "breakthrough";
+  const periods = all.filter((p) => !isBreakthrough(p.start_date));
 
   if (!sharing?.share_periods) {
     return (
@@ -42,7 +55,18 @@ export default function PartnerHistory() {
       symptoms: l.symptoms ?? [],
     })),
   ).filter((p) => p.from !== null);
-  const newestFirst = [...periods].reverse();
+  const newestFirst = [...all].reverse();
+  const cycleOf = (i: number) => {
+    // Days since the previous break-week bleed (breakthrough bleeds skipped).
+    const p = newestFirst[i];
+    if (isBreakthrough(p.start_date)) return null;
+    const prev = newestFirst
+      .slice(i + 1)
+      .find((q) => !isBreakthrough(q.start_date));
+    return prev
+      ? differenceInCalendarDays(parseISO(p.start_date), parseISO(prev.start_date))
+      : null;
+  };
 
   return (
     <div className="stack">
@@ -54,7 +78,7 @@ export default function PartnerHistory() {
 
       <section className="card stats-row" aria-label="Averages">
         <div>
-          <p className="stat">{periods.length}</p>
+          <p className="stat">{all.length}</p>
           <p className="muted small">bleeds logged</p>
         </div>
         <div>
@@ -105,13 +129,7 @@ export default function PartnerHistory() {
       ) : (
         <section className="card history">
           {newestFirst.map((p, i) => {
-            const prev = newestFirst[i + 1];
-            const cycle = prev
-              ? differenceInCalendarDays(
-                  parseISO(p.start_date),
-                  parseISO(prev.start_date),
-                )
-              : null;
+            const cycle = cycleOf(i);
             return (
               <Link
                 key={p.id}
@@ -128,6 +146,7 @@ export default function PartnerHistory() {
                       ? `to ${format(parseISO(p.end_date), "d MMM")}`
                       : "ongoing"}
                     {cycle ? ` · ${cycle}-day cycle` : ""}
+                    {isBreakthrough(p.start_date) && " · during active pills"}
                   </span>
                 </div>
                 <span className="history-len">

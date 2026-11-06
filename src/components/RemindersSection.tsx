@@ -11,7 +11,14 @@ import { errorMessage } from "../lib/supabase";
 
 /** Settings → Reminders: turn push on/off for THIS phone. */
 /** `initial` is read by the Settings page so the whole page appears at once. */
-export default function RemindersSection({ initial }: { initial: PushState }) {
+export default function RemindersSection({
+  initial,
+  pillMode,
+}: {
+  initial: PushState;
+  /** Her tracking mode; the reminders differ (no pill reminders in natural mode). */
+  pillMode: boolean;
+}) {
   const { profile } = useAuth();
   const isOwner = profile?.role === "owner";
   const [state, setState] = useState<PushState>(initial);
@@ -36,9 +43,11 @@ export default function RemindersSection({ initial }: { initial: PushState }) {
     <section className="card stack">
       <h2>Reminders</h2>
       <p className="muted small">
-        {isOwner
-          ? "Daily pill reminder at your chosen time, re-reminders at +30 and +60 minutes until it's marked, and a heads-up before your bleed."
-          : "Alerts about her cycle that she chooses to share with you."}
+        {!isOwner
+          ? "Alerts about her cycle that she chooses to share with you."
+          : pillMode
+            ? "Daily pill reminder at your chosen time, re-reminders at +30 and +60 minutes until it's marked, and a heads-up before your bleed."
+            : "No pill reminders in natural cycle mode. You'll get a note if your period is 3 or more days later than predicted."}
       </p>
 
       {state === "needs-install" && (
@@ -94,7 +103,7 @@ export default function RemindersSection({ initial }: { initial: PushState }) {
               Turn off
             </button>
           </div>
-          {isOwner && (
+          {isOwner && pillMode && (
             <p className="muted small">
               Keep your current alarm for the first 2–3 weeks, until these have
               proven reliable.

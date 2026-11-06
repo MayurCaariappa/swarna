@@ -76,7 +76,13 @@ export default function WeightChart({
             </circle>
           </g>
         ))}
-        <text x={PAD.left} y={H - 6} className="axis">
+        {/* A single point gets its date centred right under it. */}
+        <text
+          x={points.length === 1 ? x(points[0].date) : PAD.left}
+          y={H - 6}
+          className="axis"
+          textAnchor={points.length === 1 ? "middle" : "start"}
+        >
           {format(parseISO(points[0].date), "d MMM")}
         </text>
         {points.length > 1 && (

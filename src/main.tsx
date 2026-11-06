@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthProvider";
 import { ConfirmProvider } from "./components/ui/Confirm";
+import { ToastProvider } from "./components/ui/Toast";
 import { captureInstallPrompt } from "./lib/platform";
 import "@fontsource-variable/manrope";
 import "./index.css";
@@ -15,7 +16,9 @@ createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <AuthProvider>
         <ConfirmProvider>
-          <App />
+          <ToastProvider>
+            <App />
+          </ToastProvider>
         </ConfirmProvider>
       </AuthProvider>
     </BrowserRouter>

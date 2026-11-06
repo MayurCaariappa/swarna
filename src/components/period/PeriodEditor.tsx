@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { deletePeriod, savePeriod } from "../../data/actions";
+import { deletePeriod, restorePeriod, savePeriod } from "../../data/actions";
+import { useToast } from "../ui/Toast";
 import type { PeriodRow } from "../../data/db";
 import { periodEnd } from "../../lib/cycle";
 import { useConfirm } from "../ui/Confirm";
@@ -30,6 +31,7 @@ export default function PeriodEditor({
   );
   const [end, setEnd] = useState(period?.end_date ?? defaultStart ?? today);
   const confirm = useConfirm();
+  const toast = useToast();
 
   const finalEnd = ongoing ? null : end;
   const overlap = all.find(
@@ -51,6 +53,7 @@ export default function PeriodEditor({
   async function save() {
     if (error) return;
     await savePeriod(ownerId, period?.id ?? null, start, finalEnd);
+    toast(period ? "Period updated · saved" : "Period saved");
     onDone();
   }
 
@@ -63,7 +66,9 @@ export default function PeriodEditor({
       danger: true,
     });
     if (!ok) return;
+    const before = { ...period };
     await deletePeriod(period);
+    toast("Period deleted", () => restorePeriod(before));
     onDone();
   }
 

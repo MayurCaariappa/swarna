@@ -48,9 +48,20 @@ export default function Settings() {
       {ready && (
         <>
           {isOwner && <TrackingSection tracking={tracking} />}
-          <RemindersSection initial={push} />
+          <RemindersSection
+            initial={push}
+            pillMode={tracking?.mode !== "natural"}
+          />
           <PartnerSection />
-          {isOwner && <SharingSection />}
+          {isOwner && (
+            <SharingSection
+              reminderTime={
+                tracking?.mode === "pill"
+                  ? (tracking.reminder_time ?? "").slice(0, 5) || null
+                  : null
+              }
+            />
+          )}
 
           <section className="card stack">
             <h2>App</h2>
@@ -236,8 +247,10 @@ const SHARE_OPTIONS: {
   { key: "share_notes", label: "Notes" },
 ];
 
-function SharingSection() {
-  const { session } = useAuth();
+function SharingSection({ reminderTime }: { reminderTime: string | null }) {
+  const { session, counterpart } = useAuth();
+  const confirm = useConfirm();
+  const who = counterpart?.display_name || "your partner";
   // Shown from the copy saved on this phone straight away (and offline),
   // then refreshed from the server.
   const key = `swarna.sharing.${session?.user.id}`;
@@ -276,8 +289,36 @@ function SharingSection() {
 
   async function toggle(key: keyof SharingSettings) {
     if (!settings) return;
+    // Hiding pill status also stops the "pill not marked" alert (it would reveal it).
+    if (key === "share_pill_status" && settings.share_pill_status)
+      return set({ share_pill_status: false, partner_pill_alert: false });
     await set({ [key]: !settings[key] });
   }
+
+  async function toggleAlert() {
+    if (!settings) return;
+    if (settings.partner_pill_alert) return set({ partner_pill_alert: false });
+    if (
+      !settings.share_pill_status &&
+      !(await confirm({
+        title: "Share pill status too?",
+        message: `The alert tells ${who} when your pill isn't marked, so it needs Pill status turned on. ${who} will also see "taken today ✓".`,
+        action: "Share and turn on",
+      }))
+    )
+      return;
+    await set({
+      share_pill_status: true,
+      partner_pill_alert: true,
+      partner_pill_alert_time: settings.partner_pill_alert_time ?? "23:00",
+    });
+  }
+
+  // The alert should come after her reminder and its +30 / +60 re-reminders.
+  const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const alertTime = (settings?.partner_pill_alert_time ?? "23:00").slice(0, 5);
+  const tooEarly =
+    reminderTime !== null && toMin(alertTime) <= toMin(reminderTime) + 60;
 
   async function set(patch: Partial<SharingSettings>) {
     if (!settings) return;
@@ -319,20 +360,14 @@ function SharingSection() {
               Alert partner if pill not marked
               <span className="muted small block">
                 Sends them a notification if today's pill isn't marked by this
-                time
+                time. Needs Pill status shared.
               </span>
             </span>
             <input
               type="checkbox"
               className="switch"
               checked={settings.partner_pill_alert}
-              onChange={() =>
-                set({
-                  partner_pill_alert: !settings.partner_pill_alert,
-                  partner_pill_alert_time:
-                    settings.partner_pill_alert_time ?? "23:00",
-                })
-              }
+              onChange={toggleAlert}
             />
           </label>
           {settings.partner_pill_alert && (
@@ -340,16 +375,20 @@ function SharingSection() {
               Alert time
               <input
                 type="time"
-                value={(settings.partner_pill_alert_time ?? "23:00").slice(
-                  0,
-                  5,
-                )}
+                value={alertTime}
                 onChange={(e) =>
                   e.target.value &&
                   set({ partner_pill_alert_time: e.target.value })
                 }
               />
             </label>
+          )}
+          {settings.partner_pill_alert && tooEarly && (
+            <p className="error small">
+              This is before your reminders finish ({reminderTime} plus re-reminders
+              at +30 and +60 min). Pick a time at least an hour after{" "}
+              {reminderTime}, or {who} may be alerted before you've had a chance.
+            </p>
           )}
         </>
       )}

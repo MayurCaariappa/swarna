@@ -141,6 +141,23 @@ const median = (xs: number[]) => {
  * bleeds logged around her breaks (last 6). Needs at least 2; otherwise the
  * defaults stay. Mirrored on the server in supabase/functions/_shared/pack.ts.
  */
+/**
+ * On the pill: is a bleed that started on `start` the break-week (withdrawal)
+ * bleed, or breakthrough bleeding during the active pills? A bleed that starts
+ * in the break or in the last 2 active days counts as withdrawal. "unknown" =
+ * before the pack dates she entered.
+ */
+export function bleedKind(
+  cfg: PackConfig,
+  start: string,
+): "withdrawal" | "breakthrough" | "unknown" {
+  const pd = packDay(cfg, parseISO(start));
+  if (pd.kind === "off") return "withdrawal";
+  if (pd.kind === "active")
+    return pd.number > cfg.activeDays - 3 ? "withdrawal" : "breakthrough";
+  return "unknown";
+}
+
 export function calibrateBleed(
   cfg: PackConfig,
   periods: { start_date: string; end_date: string | null }[],
@@ -148,12 +165,9 @@ export function calibrateBleed(
   const offsets: number[] = [];
   const lengths: number[] = [];
   for (const p of periods) {
+    if (bleedKind(cfg, p.start_date) !== "withdrawal") continue; // breakthrough, or before tracking
     const pd = packDay(cfg, parseISO(p.start_date));
-    let offset: number;
-    if (pd.kind === "off") offset = pd.number - 1;
-    else if (pd.kind === "active" && pd.number > cfg.activeDays - 3)
-      offset = 0; // started just before the break
-    else continue; // not a withdrawal bleed (or before tracking)
+    const offset = pd.kind === "off" ? pd.number - 1 : 0; // 0 = started just before the break
     offsets.push(offset);
     if (p.end_date)
       lengths.push(

@@ -1,7 +1,8 @@
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { Droplet } from "lucide-react";
 import { useState } from "react";
-import { endPeriod, startPeriod } from "../../data/actions";
+import { deletePeriod, endPeriod, restorePeriod, startPeriod } from "../../data/actions";
+import { useToast } from "../ui/Toast";
 import type { PeriodRow } from "../../data/db";
 import { MAX_OPEN_BLEED, periodOn } from "../../lib/cycle";
 import PeriodEditor from "./PeriodEditor";
@@ -17,6 +18,19 @@ export default function PeriodCard({
   today: string;
 }) {
   const [editing, setEditing] = useState<PeriodRow | "new" | null>(null);
+  const toast = useToast();
+
+  async function started() {
+    const row = await startPeriod(ownerId, today);
+    toast("Period started today · saved", () =>
+      deletePeriod({ ...row, updated_at: "", dirty: 1 }),
+    );
+  }
+  async function ended(p: PeriodRow) {
+    const before = { ...p };
+    await endPeriod(p, today);
+    toast("Period ended today · saved", () => restorePeriod(before));
+  }
 
   const current = periodOn(periods, today, today);
   const ongoing =
@@ -65,7 +79,7 @@ export default function PeriodCard({
             ) : (
               <button
                 className="btn ink sm"
-                onClick={() => endPeriod(ongoing, today)}
+                onClick={() => ended(ongoing)}
               >
                 It ended
               </button>
@@ -73,7 +87,7 @@ export default function PeriodCard({
           ) : (
             <button
               className="btn ink sm"
-              onClick={() => startPeriod(ownerId, today)}
+              onClick={started}
             >
               It started
             </button>

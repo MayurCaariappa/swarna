@@ -10,7 +10,7 @@ import {
   sexLabel,
   symptomLabel,
 } from "./dailyLog";
-import { packDay, toISODate, type PackConfig } from "./pill";
+import { bleedKind, packDay, toISODate, type PackConfig } from "./pill";
 import { monthlyTrends, summarize, symptomPatterns } from "./stats";
 
 // Builds the doctor export (CSV + PDF) entirely on the phone.
@@ -154,16 +154,29 @@ export function dailyCsv(d: ExportData, o: ExportOptions): string {
   );
 }
 
+/** On the pill: a bleed mid-pack (breakthrough) isn't a new cycle. */
+function isBreakthrough(d: ExportData, start: string) {
+  const cfg = packConfig(d.tracking);
+  return cfg !== null && bleedKind(cfg, start) === "breakthrough";
+}
+
 export function periodsInRange(d: ExportData, o: ExportOptions) {
   const inRange = d.periods.filter(
     (p) => p.start_date >= o.from && p.start_date <= o.to,
   );
+  const pill = packConfig(d.tracking) !== null;
   return inRange.map((p) => {
-    const next = d.periods.find((q) => q.start_date > p.start_date);
+    const breakthrough = isBreakthrough(d, p.start_date);
+    const next = breakthrough
+      ? undefined
+      : d.periods.find(
+          (q) => q.start_date > p.start_date && !isBreakthrough(d, q.start_date),
+        );
     return {
       start: p.start_date,
       end: p.end_date,
       length: p.end_date ? len(p.start_date, p.end_date) : null,
+      kind: !pill ? "" : breakthrough ? "Breakthrough (active pills)" : "Withdrawal (break)",
       cycle: next
         ? differenceInCalendarDays(
             parseISO(next.start_date),
@@ -176,12 +189,13 @@ export function periodsInRange(d: ExportData, o: ExportOptions) {
 
 export function periodsCsv(d: ExportData, o: ExportOptions): string {
   return toCsv(
-    ["Start", "End", "Bleed length (days)", "Cycle length (days)"],
+    ["Start", "End", "Bleed length (days)", "Cycle length (days)", "Type"],
     periodsInRange(d, o).map((p) => [
       p.start,
       p.end ?? "ongoing",
       p.length,
       p.cycle,
+      p.kind,
     ]),
   );
 }
@@ -247,8 +261,16 @@ export async function buildPdf(d: ExportData, o: ExportOptions): Promise<Blob> {
 
   // Overview
   const cfg = packConfig(d.tracking);
-  const relevant = d.periods.filter((p) => p.start_date <= o.to);
+  const relevant = d.periods.filter(
+    (p) => p.start_date <= o.to && !isBreakthrough(d, p.start_date),
+  );
   const s = summarize(relevant.filter((p) => p.start_date >= o.from));
+  const breakthroughCount = d.periods.filter(
+    (p) =>
+      p.start_date >= o.from &&
+      p.start_date <= o.to &&
+      isBreakthrough(d, p.start_date),
+  ).length;
   const overview: [string, string][] = [
     [
       "Tracking",
@@ -256,7 +278,15 @@ export async function buildPdf(d: ExportData, o: ExportOptions): Promise<Blob> {
         ? `Combined pill, ${cfg.activeDays} active / ${cfg.breakDays} break days (bleeds are withdrawal bleeds)`
         : "Natural cycle (no hormonal pill)",
     ],
-    ["Periods logged in range", String(s.periodsLogged)],
+    ["Periods logged in range", String(s.periodsLogged + breakthroughCount)],
+    ...(breakthroughCount
+      ? ([
+          [
+            "Breakthrough bleeds",
+            `${breakthroughCount} (during active pills; not counted as cycles)`,
+          ],
+        ] as [string, string][])
+      : []),
     [
       "Average cycle length",
       s.avgCycle !== null
@@ -290,12 +320,15 @@ export async function buildPdf(d: ExportData, o: ExportOptions): Promise<Blob> {
   heading("Periods");
   if (periods.length) {
     table(
-      ["Started", "Ended", "Bleed length", "Cycle length"],
+      cfg
+        ? ["Started", "Ended", "Bleed length", "Cycle length", "Type"]
+        : ["Started", "Ended", "Bleed length", "Cycle length"],
       periods.map((p) => [
         nice(p.start),
         p.end ? nice(p.end) : "ongoing",
         p.length ? `${p.length} d` : "–",
         p.cycle ? `${p.cycle} d` : "–",
+        ...(cfg ? [p.kind] : []),
       ]),
     );
   } else {
@@ -309,7 +342,10 @@ export async function buildPdf(d: ExportData, o: ExportOptions): Promise<Blob> {
 
   // Symptoms
   const logsInRange = d.logs.filter((l) => l.date >= o.from && l.date <= o.to);
-  const patterns = symptomPatterns(d.periods, logsInRange);
+  const patterns = symptomPatterns(
+    d.periods.filter((p) => !isBreakthrough(d, p.start_date)),
+    logsInRange,
+  );
   if (patterns.length) {
     heading("Symptoms");
     table(

@@ -9,12 +9,38 @@ export default function PackSetup({ ownerId, today }: { ownerId: string; today: 
   const [active, setActive] = useState(21);
   const [brk, setBrk] = useState(7);
   const [reminder, setReminder] = useState("21:00");
-  const [alreadyTaken, setAlreadyTaken] = useState(true);
+  // null = she hasn't touched the switch yet (see the default below).
+  const [takenChoice, setTakenChoice] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const valid = Boolean(start) && active >= 1 && active <= 365 && brk >= 0 && brk <= 60;
+  const okActive = Number.isInteger(active) && active >= 1 && active <= 365;
+  const okBreak = Number.isInteger(brk) && brk >= 0 && brk <= 60;
+  const problem = !start
+    ? "Pick the date of the first pill."
+    : !okActive
+      ? "Active pills must be a whole number from 1 to 365."
+      : !okBreak
+        ? "Break days must be a whole number from 0 to 60."
+        : "";
+  const valid = !problem;
   const info = valid ? packDay({ packStart: start, activeDays: active, breakDays: brk }, parseISO(today)) : null;
   const startsInPast = valid && start < today;
+  const future = valid && start > today;
+
+  // Pills that "I've taken every pill up to yesterday" would mark.
+  const backfill: string[] = [];
+  if (startsInPast) {
+    const cfg = { packStart: start, activeDays: active, breakDays: brk };
+    const n = Math.min(differenceInCalendarDays(parseISO(today), parseISO(start)), 400);
+    for (let i = 0; i < n; i++) {
+      const d = addDays(parseISO(start), i);
+      if (packDay(cfg, d).kind === "active") backfill.push(toISODate(d));
+    }
+  }
+  // On by default only within the current pack; for older dates she has to choose.
+  const withinOnePack =
+    startsInPast && differenceInCalendarDays(parseISO(today), parseISO(start)) < active + brk;
+  const alreadyTaken = takenChoice ?? withinOnePack;
 
   const preview = !info
     ? ""
@@ -34,17 +60,8 @@ export default function PackSetup({ ownerId, today }: { ownerId: string; today: 
       break_days: brk,
       reminder_time: reminder,
     });
-    if (startsInPast && alreadyTaken) {
-      // Mark every active pill day from the start date up to yesterday.
-      const cfg = { packStart: start, activeDays: active, breakDays: brk };
-      const days = Math.min(differenceInCalendarDays(parseISO(today), parseISO(start)), 400);
-      const dates: string[] = [];
-      for (let i = 0; i < days; i++) {
-        const d = addDays(parseISO(start), i);
-        if (packDay(cfg, d).kind === "active") dates.push(toISODate(d));
-      }
-      if (dates.length) await markPillsTaken(ownerId, dates);
-    }
+    if (startsInPast && alreadyTaken && backfill.length)
+      await markPillsTaken(ownerId, backfill);
   }
 
   return (
@@ -52,7 +69,9 @@ export default function PackSetup({ ownerId, today }: { ownerId: string; today: 
       <h2>Set up your pill pack</h2>
 
       <label>
-        First pill of your current pack was taken on
+        {future
+          ? "First pill of your new pack will be taken on"
+          : "First pill of your current pack was taken on"}
         <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
       </label>
 
@@ -72,13 +91,20 @@ export default function PackSetup({ ownerId, today }: { ownerId: string; today: 
         <input type="time" value={reminder} onChange={(e) => setReminder(e.target.value)} />
       </label>
 
-      {startsInPast && (
+      {startsInPast && backfill.length > 0 && (
         <label className="toggle-row">
-          <span>I've taken every pill up to yesterday</span>
-          <input type="checkbox" className="switch" checked={alreadyTaken} onChange={(e) => setAlreadyTaken(e.target.checked)} />
+          <span>
+            I've taken every pill up to yesterday
+            <span className="muted small block">
+              Marks {backfill.length} pill{backfill.length === 1 ? "" : "s"} as taken, from{" "}
+              {format(parseISO(backfill[0]), "d MMM yyyy")}. You can unmark any later.
+            </span>
+          </span>
+          <input type="checkbox" className="switch" checked={alreadyTaken} onChange={(e) => setTakenChoice(e.target.checked)} />
         </label>
       )}
 
+      {problem && <p className="error small">{problem}</p>}
       {preview && <p className="info">{preview}</p>}
 
       <button className="btn primary" disabled={!valid || busy} onClick={save}>

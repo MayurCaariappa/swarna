@@ -1,6 +1,7 @@
 export type BarState =
   | "done"
   | "now"
+  | "nowdone" // today, already taken
   | "todo"
   | "brk"
   | "bleed"

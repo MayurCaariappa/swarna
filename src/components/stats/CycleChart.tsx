@@ -130,12 +130,20 @@ export default function CycleChart({
           </g>
         )}
 
-        <text x={PAD.left} y={H - 6} className="axis">
-          {format(parseISO(cycles[0].start), "MMM")}
-        </text>
-        <text x={W - PAD.right} y={H - 6} className="axis" textAnchor="end">
-          {format(parseISO(cycles[cycles.length - 1].start), "MMM")}
-        </text>
+        {/* Start date under each bar (up to 6), else just the first and last. */}
+        {cycles.map((c, i) =>
+          cycles.length <= 6 || i === 0 || i === cycles.length - 1 ? (
+            <text
+              key={c.start}
+              x={PAD.left + slot * i + slot / 2}
+              y={H - 6}
+              className="axis"
+              textAnchor="middle"
+            >
+              {format(parseISO(c.start), "d MMM")}
+            </text>
+          ) : null,
+        )}
       </svg>
 
       <p className="chart-readout small">

@@ -160,16 +160,22 @@ export interface MonthRow {
   avgWeight: number | null;
 }
 
-/** PCOS-relevant monthly counts, newest month first. */
+/** PCOS-relevant monthly counts, newest month first — from the first month she logged. */
 export function monthlyTrends(
   logs: Pick<DailyLogRow, "date" | "symptoms" | "mood" | "weight_kg">[],
   today: string,
   months = 6,
 ): MonthRow[] {
   const rows: MonthRow[] = [];
+  const firstKey = logs.reduce<string | null>(
+    (min, l) => (min === null || l.date < min ? l.date : min),
+    null,
+  )?.slice(0, 7);
+  if (!firstKey) return rows;
   for (let i = 0; i < months; i++) {
     const m = subMonths(startOfMonth(parseISO(today)), i);
     const key = format(m, "yyyy-MM");
+    if (key < firstKey) break; // no months before she started tracking
     const inMonth = logs.filter((l) => l.date.startsWith(key));
     const weights = inMonth
       .map((l) => l.weight_kg)

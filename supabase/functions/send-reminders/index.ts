@@ -157,7 +157,9 @@ async function runSchedule(db: SupabaseClient) {
           .maybeSingle(),
         db
           .from("sharing_settings")
-          .select("share_periods, partner_pill_alert, partner_pill_alert_time")
+          .select(
+            "share_periods, share_pill_status, partner_pill_alert, partner_pill_alert_time",
+          )
           .eq("owner_id", t.owner_id)
           .maybeSingle(),
       ]);
@@ -260,7 +262,8 @@ async function runSchedule(db: SupabaseClient) {
         .select("id", { count: "exact", head: true })
         .eq("owner_id", t.owner_id)
         .eq("deleted", false)
-        .gte("start_date", breakStart);
+        // A bleed that began in the last 2 active days counts as this break's bleed.
+        .gte("start_date", addDays(breakStart, -2));
       if (
         !count &&
         (await sendOnce(t.owner_id, "bleed-late", breakStart, {
@@ -275,6 +278,7 @@ async function runSchedule(db: SupabaseClient) {
     // 4. Optional: tell the partner if the pill isn't marked by her chosen time.
     if (
       link &&
+      sharing?.share_pill_status && // the alert reveals pill status, so it needs that switch on
       sharing?.partner_pill_alert &&
       sharing.partner_pill_alert_time &&
       today.kind === "active" &&

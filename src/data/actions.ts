@@ -73,13 +73,21 @@ function writePeriod(row: Omit<PeriodRow, "updated_at" | "dirty">) {
 
 /** One tap: "Period started" (today, or another day). */
 export async function startPeriod(ownerId: string, date: string) {
-  await writePeriod({
+  const row = {
     id: crypto.randomUUID(),
     owner_id: ownerId,
     start_date: date,
     end_date: null,
     deleted: false,
-  });
+  };
+  await writePeriod(row);
+  requestSync();
+  return row;
+}
+
+/** Put a period back exactly as it was (Undo). */
+export async function restorePeriod(period: PeriodRow) {
+  await writePeriod({ ...period });
   requestSync();
 }
 

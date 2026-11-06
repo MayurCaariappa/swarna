@@ -374,6 +374,11 @@ strong {
   background: #ffffff;
   box-shadow: inset 0 0 0 2px var(--ink);
 }
+/* Today, taken: filled like the other taken days but taller, so "today" still stands out. */
+.pb.nowdone {
+  background: var(--ink);
+  transform: scaleY(1.3);
+}
 .pb.brk {
   background: rgba(178, 61, 99, 0.3);
 }
@@ -473,6 +478,22 @@ a.tile-link:active {
 }
 .card.hint .muted {
   color: var(--b-lilac-ink);
+}
+.card.hint.invite-hint {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.invite-hint > a {
+  flex: 1;
+  min-width: 0;
+}
+.invite-hint .hint-close {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--ink);
 }
 .card.hint.row-between {
   flex-direction: row;
@@ -1106,6 +1127,11 @@ a.btn {
   color: var(--ink);
   box-shadow: inset 0 0 0 2px var(--ink);
 }
+/* Today gets a ring outside the cell, whatever its state (taken, not yet, …). */
+.pill.is-today {
+  outline: 2px solid var(--strong);
+  outline-offset: 2px;
+}
 .pill.off {
   background: var(--off-day);
   transform: scale(0.6);
@@ -1435,8 +1461,27 @@ a.history-row:active {
   background: var(--primary);
   color: var(--on-primary);
 }
-.tap-chip .bars {
-  letter-spacing: -1px;
+/* Energy: four rising bars, the first N filled (a little signal meter). */
+.tap-chip .meter {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+.tap-chip .meter i {
+  width: 3px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.25;
+}
+.tap-chip .meter i:nth-child(1) { height: 5px; }
+.tap-chip .meter i:nth-child(2) { height: 8px; }
+.tap-chip .meter i:nth-child(3) { height: 11px; }
+.tap-chip .meter i:nth-child(4) { height: 14px; }
+.tap-chip .meter i.on {
+  opacity: 1;
 }
 
 /* ── Stats / charts ── */
@@ -1672,6 +1717,48 @@ details[open] summary {
 @media (prefers-reduced-motion: reduce) {
   .confirm-backdrop,
   .confirm-sheet {
+    animation: none;
+  }
+}
+
+/* ── Snack (short message + Undo above the tab bar) ── */
+.snack-wrap {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  bottom: calc(var(--safe-bottom) + 86px);
+  width: min(calc(100% - 32px), 420px);
+  pointer-events: none;
+}
+.snack {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 6px 6px 6px 20px;
+  border-radius: 999px;
+  background: var(--strong);
+  color: var(--on-strong);
+  font-weight: 700;
+  font-size: 0.95rem;
+  box-shadow: var(--nav-shadow);
+  animation: sheet-up 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.snack-undo {
+  font: inherit;
+  border: none;
+  border-radius: 999px;
+  min-height: 40px;
+  padding: 0 16px;
+  background: var(--b-lilac);
+  color: var(--ink);
+  cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+  .snack {
     animation: none;
   }
 }

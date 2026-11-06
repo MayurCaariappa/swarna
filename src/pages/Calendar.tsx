@@ -6,7 +6,8 @@ import Disclaimer from "../components/Disclaimer";
 import DailyLogSheet from "../components/log/DailyLogSheet";
 import LogSummary from "../components/log/LogSummary";
 import PeriodEditor from "../components/period/PeriodEditor";
-import { endPeriod, setPillTaken } from "../data/actions";
+import { endPeriod, restorePeriod, setPillTaken } from "../data/actions";
+import { useToast } from "../components/ui/Toast";
 import type { PeriodRow } from "../data/db";
 import {
   hasContent,
@@ -36,6 +37,7 @@ export default function Calendar() {
   const loggedDates = useLoggedDates(ownerId, grid.from, grid.to);
   const selectedLog = useDailyLog(ownerId, selected);
   const [logOpen, setLogOpen] = useState(false);
+  const toast = useToast();
 
   const days = useMemo(
     () =>
@@ -132,7 +134,14 @@ export default function Calendar() {
                   {openBefore && (
                     <button
                       className="btn"
-                      onClick={() => endPeriod(openBefore, sel.date)}
+                      onClick={async () => {
+                        const before = { ...openBefore };
+                        await endPeriod(openBefore, sel.date);
+                        toast(
+                          `Period ended ${format(parseISO(sel.date), "d MMM")} · saved`,
+                          () => restorePeriod(before),
+                        );
+                      }}
                     >
                       Period ended this day
                     </button>
@@ -165,9 +174,14 @@ export default function Calendar() {
                   {sel.date <= today && (
                     <button
                       className="btn"
-                      onClick={() =>
-                        setPillTaken(ownerId, sel.date, !sel.pill!.taken)
-                      }
+                      onClick={async () => {
+                        const was = sel.pill!.taken;
+                        await setPillTaken(ownerId, sel.date, !was);
+                        toast(
+                          `Pill ${sel.pill!.number} ${was ? "unmarked" : "marked taken"}`,
+                          () => setPillTaken(ownerId, sel.date, was),
+                        );
+                      }}
                     >
                       {sel.pill.taken ? "Unmark" : "Mark taken"}
                     </button>

@@ -12,6 +12,7 @@ import {
   useTracking,
 } from "../data/hooks";
 import { naturalPeriods } from "../lib/cycle";
+import { bleedKind } from "../lib/pill";
 import {
   completedCycles,
   monthlyTrends,
@@ -39,11 +40,6 @@ export default function Stats() {
 
   const data = useMemo(() => {
     if (!periods || !logs || tracking === undefined) return null;
-    // In natural mode, averages use only cycles since stopping the pill.
-    const relevant =
-      tracking?.mode === "natural"
-        ? naturalPeriods(periods, tracking.natural_since)
-        : periods;
     const cfg =
       tracking?.mode === "pill" && tracking.pack_start_date
         ? {
@@ -52,10 +48,21 @@ export default function Stats() {
             breakDays: tracking.break_days,
           }
         : null;
+    // On the pill, bleeding during the active pills (breakthrough) isn't a new
+    // cycle, so only break-week bleeds count. In natural mode, only cycles
+    // since stopping the pill.
+    const breakthrough = cfg
+      ? periods.filter((p) => bleedKind(cfg, p.start_date) === "breakthrough")
+      : [];
+    const relevant =
+      tracking?.mode === "natural"
+        ? naturalPeriods(periods, tracking.natural_since)
+        : periods.filter((p) => !breakthrough.includes(p));
     return {
+      breakthrough: breakthrough.length,
       summary: summarize(relevant),
       cycles: completedCycles(relevant),
-      patterns: symptomPatterns(periods, logs),
+      patterns: symptomPatterns(relevant, logs),
       months: monthlyTrends(logs, today),
       weights: weightSeries(logs),
       adherence:
@@ -64,7 +71,15 @@ export default function Stats() {
   }, [periods, logs, tracking, pills, today]);
 
   if (!data) return null;
-  const { summary, cycles, patterns, months, weights, adherence } = data;
+  const {
+    summary,
+    cycles,
+    patterns,
+    months,
+    weights,
+    adherence,
+    breakthrough,
+  } = data;
   const pillMode = tracking?.mode === "pill";
 
   return (
@@ -92,8 +107,20 @@ export default function Stats() {
               : "regularity"
           }
         />
-        <Tile value={summary.periodsLogged} label="periods logged" />
+        <Tile
+          value={summary.periodsLogged + breakthrough}
+          label="periods logged"
+        />
       </section>
+
+      {breakthrough > 0 && (
+        <p className="muted small">
+          {breakthrough === 1
+            ? "1 bleed during your active pills (breakthrough bleeding) isn't"
+            : `${breakthrough} bleeds during your active pills (breakthrough bleeding) aren't`}{" "}
+          counted as a cycle. It's still on your calendar and in your export.
+        </p>
+      )}
 
       <section className="card stack">
         <h2>Recent cycles</h2>
@@ -192,31 +219,35 @@ export default function Stats() {
         <p className="muted small">
           Days logged each month. Watch how these change over time.
         </p>
-        <table className="table small">
-          <thead>
-            <tr>
-              <th>Month</th>
-              <th>Acne</th>
-              <th>Hair</th>
-              <th>Low mood</th>
-              <th>Weight</th>
-            </tr>
-          </thead>
-          <tbody>
-            {months.map((m) => (
-              <tr key={m.key} className={m.loggedDays === 0 ? "muted" : ""}>
-                <td>{m.month}</td>
-                <td>{m.loggedDays ? m.acneDays : "–"}</td>
-                <td>{m.loggedDays ? m.hairDays : "–"}</td>
-                <td>{m.loggedDays ? m.lowMoodDays : "–"}</td>
-                <td>{m.avgWeight ?? "–"}</td>
+        {months.length === 0 ? (
+          <p className="muted small">Appears once you log a day.</p>
+        ) : (
+          <table className="table small">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Acne</th>
+                <th>Hair</th>
+                <th>Low mood</th>
+                <th>Weight</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {months.map((m) => (
+                <tr key={m.key} className={m.loggedDays === 0 ? "muted" : ""}>
+                  <td>{m.month}</td>
+                  <td>{m.loggedDays ? m.acneDays : "–"}</td>
+                  <td>{m.loggedDays ? m.hairDays : "–"}</td>
+                  <td>{m.loggedDays ? m.lowMoodDays : "–"}</td>
+                  <td>{m.avgWeight ?? "–"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
         <p className="muted small">
-          Low mood = days logged as low, sad or irritable. Weight = monthly
-          average (kg).
+          Low mood = days logged as low, sad, irritable or anxious. Weight =
+          monthly average (kg).
         </p>
       </section>
 

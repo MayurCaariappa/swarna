@@ -74,6 +74,12 @@ export default function DailyLogSheet({ ownerId, date, onClose }: Props) {
     }
   }, [row]);
 
+  const validWeight = (v: string) => {
+    const n = Number(v);
+    return v.trim() !== "" && Number.isFinite(n) && n >= 20 && n <= 300;
+  };
+  const weightError = weight !== "" && !validWeight(weight);
+
   const pending = useRef<Partial<DailyLogFields>>({});
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const flush = () => {
@@ -163,9 +169,11 @@ export default function DailyLogSheet({ ownerId, date, onClose }: Props) {
               on={log.energy === o.value}
               onClick={() => pick("energy", o.value)}
             >
-              <span className="bars" aria-hidden>
-                {"▁▃▅▇".slice(0, o.value)}
-              </span>{" "}
+              <span className="meter" aria-hidden>
+                {[1, 2, 3, 4].map((n) => (
+                  <i key={n} className={n <= o.value ? "on" : ""} />
+                ))}
+              </span>
               {o.label}
             </Chip>
           ))}
@@ -232,14 +240,22 @@ export default function DailyLogSheet({ ownerId, date, onClose }: Props) {
             max={300}
             placeholder="e.g. 58.5"
             value={weight}
+            aria-invalid={weightError ? true : undefined}
+            aria-describedby={weightError ? "weight-error" : undefined}
             onChange={(e) => {
               setWeight(e.target.value);
               const n = Number(e.target.value);
               if (e.target.value === "") queue({ weight_kg: null });
-              else if (n >= 20 && n <= 300)
+              else if (validWeight(e.target.value))
                 queue({ weight_kg: Math.round(n * 10) / 10 });
+              else delete pending.current.weight_kg; // never save a half-typed or impossible value
             }}
           />
+          {weightError && (
+            <span id="weight-error" className="error small">
+              Enter a weight between 20 and 300 kg — this one isn't saved.
+            </span>
+          )}
         </label>
 
         <label>

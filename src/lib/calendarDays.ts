@@ -112,7 +112,19 @@ export function buildMonthDays<P extends PeriodLike>(
         info.pill = { number: pd.number, taken: t, missed: !t && date < today };
       } else if (pd.kind === "off") {
         info.off = pd.number;
-        info.predictedBleed = mayPredict && isPredictedBleedDay(cfg, pd);
+        // On the pill, only this break's own bleed (started in the break or the
+        // 2 days before it) hides the prediction — not a bleed mid-pack.
+        const breakStart = toISODate(addDays(d, -(pd.number - 1)));
+        const loggedThisBreak = periods.some(
+          (p) =>
+            p.start_date >= toISODate(addDays(parseISO(breakStart), -2)) &&
+            p.start_date <= date,
+        );
+        info.predictedBleed =
+          !info.period &&
+          !loggedThisBreak &&
+          date >= today &&
+          isPredictedBleedDay(cfg, pd);
       }
     }
 
