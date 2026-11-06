@@ -107,7 +107,7 @@ export default function Export() {
   }
 
   return (
-    <div className="page narrow stack">
+    <div className="page solo stack">
       <button
         className="btn link back"
         onClick={() =>

@@ -1,22 +1,18 @@
-import {
-  differenceInCalendarDays,
-  format,
-  parseISO,
-  startOfMonth,
-} from "date-fns";
-import { useMemo, useState } from "react";
+import { differenceInCalendarDays, format, parseISO } from "date-fns";
+import { useMemo } from "react";
 import CalendarGrid from "../../components/calendar/CalendarGrid";
 import Disclaimer from "../../components/Disclaimer";
 import LogSummary from "../../components/log/LogSummary";
-import { buildMonthDays } from "../../lib/calendarDays";
+import { buildMonthDays, pillStatus } from "../../lib/calendarDays";
+import { useCalendarNav } from "../../lib/useCalendarNav";
 import { usePartnerData } from "../../partner/PartnerData";
 
 /** Read-only shared calendar. */
 export default function PartnerCalendar() {
   const { ownerName, sharing, tracking, periods, takenDates, today, logs } =
     usePartnerData();
-  const [month, setMonth] = useState(() => startOfMonth(parseISO(today)));
-  const [selected, setSelected] = useState(today);
+  const { month, setMonth, selected, setSelected, goToday, atToday } =
+    useCalendarNav(today);
 
   const showPeriods = sharing?.share_periods ?? false;
   const showPills = sharing?.share_pill_status ?? false;
@@ -59,6 +55,8 @@ export default function PartnerCalendar() {
         today={today}
         selected={selected}
         onSelect={setSelected}
+        onToday={goToday}
+        atToday={atToday}
         pillMode={tracking?.mode === "pill"}
         showPills={showPills}
       />
@@ -80,12 +78,8 @@ export default function PartnerCalendar() {
           )}
           {sel.pill && (
             <p>
-              Pill {sel.pill.number}:{" "}
-              {sel.pill.taken
-                ? "taken ✓"
-                : sel.pill.missed
-                  ? "not marked"
-                  : "upcoming"}
+              Pill {sel.pill.number}: {pillStatus(sel.pill, sel.date, today)}
+              {sel.pill.taken && " ✓"}
             </p>
           )}
           {sel.off && <p className="muted">Break day {sel.off}</p>}

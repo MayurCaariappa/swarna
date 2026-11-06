@@ -63,6 +63,7 @@
   --bleed-soft: rgba(217, 87, 122, 0.14);
   --fertile: #c98a1e;
   --fertile-soft: rgba(201, 138, 30, 0.16);
+  --off-day: #e3ddee; /* pill break days: a soft filled circle */
 
   /* status */
   --ok: #23774a;
@@ -122,6 +123,7 @@
     --bleed-soft: rgba(216, 96, 127, 0.2);
     --fertile: #b5822a;
     --fertile-soft: rgba(181, 130, 42, 0.26);
+    --off-day: #353042;
 
     --ok: #6cc196;
     --danger: #ef8079;
@@ -223,6 +225,10 @@ strong {
 }
 .page.narrow {
   max-width: 460px;
+  padding-bottom: calc(var(--safe-bottom) + 40px);
+}
+/* Full-width page without the tab bar (Install, Export) — same column as the tabs. */
+.page.solo {
   padding-bottom: calc(var(--safe-bottom) + 40px);
 }
 .stack {
@@ -396,6 +402,20 @@ strong {
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+}
+a.tile-link {
+  position: relative;
+  color: var(--ink);
+  transition: transform 0.08s ease;
+}
+a.tile-link:active {
+  transform: scale(0.98);
+}
+.tile-go {
+  position: absolute;
+  top: 18px;
+  right: 16px;
+  opacity: 0.55;
 }
 .tile-icon {
   width: 40px;
@@ -893,21 +913,23 @@ a.btn {
   left: 50%;
   transform: translateX(-50%);
   bottom: calc(var(--safe-bottom) + 18px);
-  display: flex;
-  align-items: center;
+  /* Three equal columns and a fixed width, so the bar never changes size between pages. */
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 2px;
+  width: min(336px, calc(100% - 32px));
   padding: 5px;
   border-radius: 999px;
   background: var(--nav-bg);
   box-shadow: var(--nav-shadow);
-  max-width: calc(100% - 32px);
 }
 .tabbar a {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   height: 46px;
-  padding: 0 18px;
+  padding: 0 8px;
   border-radius: 999px;
   font-size: 0.92rem;
   font-weight: 700;
@@ -920,7 +942,6 @@ a.btn {
 .tabbar a.active {
   background: var(--nav-active);
   color: var(--nav-active-ink);
-  padding: 0 20px;
 }
 .tabbar a.active::before {
   content: "";
@@ -1086,8 +1107,7 @@ a.btn {
   box-shadow: inset 0 0 0 2px var(--ink);
 }
 .pill.off {
-  background: transparent;
-  box-shadow: inset 0 0 0 1.5px var(--surface-2);
+  background: var(--off-day);
   transform: scale(0.6);
 }
 .pill.off.bleed {
@@ -1138,6 +1158,26 @@ a.btn {
 .cal-head h1 {
   font-size: 1.6rem;
 }
+.cal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.today-btn {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  height: 30px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: var(--strong);
+  color: var(--on-strong);
+  cursor: pointer;
+}
+.cal-card {
+  touch-action: pan-y; /* vertical scroll stays native; horizontal swipe changes month */
+}
 .cal-head .icon-btn {
   background: var(--surface);
 }
@@ -1177,7 +1217,7 @@ a.btn {
   opacity: 0.3;
 }
 .cal-day.off {
-  color: var(--muted);
+  background: var(--off-day);
 }
 .cal-day.fertile {
   background: var(--fertile-soft);
@@ -1221,23 +1261,30 @@ a.btn {
 .cal-day.bleed .dot.taken {
   background: #fff;
 }
+/* Pill dot + logged ring sit side by side under the number. */
+.marks {
+  display: flex;
+  gap: 3px;
+  height: 6px;
+  align-items: center;
+}
+.cal-day .marks:empty {
+  visibility: hidden;
+}
+/* "Logged": a small ring, so it reads differently from the filled pill dot. */
 .log-mark {
-  position: absolute;
-  top: 3px;
-  right: 3px;
+  display: inline-block;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--strong);
+  box-shadow: inset 0 0 0 1.5px var(--strong);
+}
+.legend .log-mark {
+  width: 8px;
+  height: 8px;
 }
 .cal-day.bleed .log-mark {
-  background: #fff;
-}
-.legend-mark {
-  position: static;
-  display: inline-block;
-  width: 7px;
-  height: 7px;
+  box-shadow: inset 0 0 0 1.5px #fff;
 }
 .sw {
   display: inline-block;
@@ -1259,7 +1306,7 @@ a.btn {
   border: 1.5px solid var(--fertile);
 }
 .sw.off {
-  box-shadow: inset 0 0 0 1.5px var(--surface-2);
+  background: var(--off-day);
 }
 
 /* ── Partner ── */
@@ -1287,9 +1334,21 @@ a.btn {
 .history-row:last-child {
   border-bottom: none;
 }
+a.history-row {
+  color: inherit;
+}
+a.history-row:active {
+  opacity: 0.6;
+}
 .history-len {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--bleed);
   font-weight: 800;
+}
+.history-len svg {
+  color: var(--faint);
 }
 
 /* ── Daily log sheet ── */
@@ -1561,4 +1620,58 @@ details[open] summary {
 .sub-row .tap-chip.on {
   background: var(--primary);
   box-shadow: none;
+}
+
+.tiny {
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+/* ── Confirm sheet (instead of the browser's confirm()) ── */
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(10, 8, 14, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 12px calc(var(--safe-bottom) + 12px);
+  animation: fade-in 0.15s ease-out;
+}
+.confirm-sheet {
+  width: 100%;
+  max-width: 460px;
+  background: var(--surface);
+  border-radius: var(--r-card);
+  padding: 24px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 -6px 30px rgba(0, 0, 0, 0.25);
+  animation: sheet-up 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.confirm-sheet h2 {
+  font-size: 1.2rem;
+}
+.confirm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+.btn.danger-solid {
+  background: var(--danger);
+  color: var(--on-strong); /* white on red in light, dark ink on the lighter red in dark */
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .confirm-backdrop,
+  .confirm-sheet {
+    animation: none;
+  }
 }

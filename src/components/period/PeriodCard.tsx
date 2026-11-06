@@ -52,7 +52,7 @@ export default function PeriodCard({
 
   return (
     <>
-      <section className="tile blk-rose">
+      <section className="tile blk-rose" aria-label="Period">
         <div className="tile-icon">
           <Droplet size={18} />
         </div>

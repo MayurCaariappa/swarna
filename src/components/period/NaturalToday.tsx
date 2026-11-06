@@ -39,7 +39,7 @@ export default function NaturalToday({
   if (!p) {
     return (
       <>
-        <section className="blk blk-lilac">
+        <section className="blk blk-lilac" aria-label="Cycle today">
           <span className="blk-chip">Natural cycle</span>
           <span className="blk-title">Log your period to begin</span>
           <p className="blk-line">

@@ -25,7 +25,7 @@ export default function InstallGuide() {
   }, []);
 
   return (
-    <div className="page narrow stack">
+    <div className="page solo stack">
       <button
         className="btn link back"
         onClick={() => (history.length > 1 ? navigate(-1) : navigate("/"))}

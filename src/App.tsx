@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { useLayoutEffect } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
 import Layout from "./components/Layout";
 import UpdateToast from "./components/UpdateToast";
@@ -19,10 +20,20 @@ import Welcome from "./pages/Welcome";
 export default function App() {
   return (
     <>
+      <ScrollToTop />
       <AppRoutes />
       <UpdateToast />
     </>
   );
+}
+
+/** Every new page opens at the top (the browser would keep the old scroll position). */
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
 }
 
 function AppRoutes() {

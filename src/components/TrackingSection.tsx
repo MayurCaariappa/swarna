@@ -1,5 +1,6 @@
 import { useAuth } from "../auth/AuthProvider";
 import { saveTracking } from "../data/actions";
+import { useConfirm } from "./ui/Confirm";
 import { DEFAULT_TRACKING, type TrackingRow } from "../data/db";
 
 /** Settings → Tracking: pill vs natural mode, pack schedule, reminder time. */
@@ -11,18 +12,22 @@ export default function TrackingSection({
 }) {
   const { session } = useAuth();
   const ownerId = session!.user.id;
+  const confirm = useConfirm();
 
   const t = tracking ?? { ...DEFAULT_TRACKING, owner_id: ownerId };
   const save = (patch: Parameters<typeof saveTracking>[1]) =>
     saveTracking(ownerId, patch);
 
-  function setMode(mode: "pill" | "natural") {
+  async function setMode(mode: "pill" | "natural") {
     if (mode === t.mode) return;
     if (
       mode === "natural" &&
-      !confirm(
-        "Switch to natural cycle mode?\n\nThe first cycles after stopping the pill can be irregular, so predictions will take a few cycles to settle. Your pill history is kept.",
-      )
+      !(await confirm({
+        title: "Switch to natural cycle mode?",
+        message:
+          "The first cycles after stopping the pill can be irregular, so predictions will take a few cycles to settle. Your pill history is kept.",
+        action: "Switch",
+      }))
     )
       return;
     save(

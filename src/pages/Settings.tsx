@@ -1,8 +1,10 @@
+import { format, parseISO } from "date-fns";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import RemindersSection from "../components/RemindersSection";
 import TrackingSection from "../components/TrackingSection";
+import { useConfirm } from "../components/ui/Confirm";
 import { useTracking } from "../data/hooks";
 import { useSyncStatus } from "../data/sync";
 import { getPushState, type PushState } from "../lib/push";
@@ -86,6 +88,7 @@ export default function Settings() {
 
 function PartnerSection() {
   const { profile, link, counterpart, refresh } = useAuth();
+  const confirm = useConfirm();
   const isOwner = profile?.role === "owner";
   const [invite, setInvite] = useState<InviteCode | null>(null);
   const [busy, setBusy] = useState(false);
@@ -116,8 +119,15 @@ function PartnerSection() {
 
   async function unlink() {
     const who = counterpart?.display_name || "your partner";
-    if (!confirm(`Unlink from ${who}? They will immediately lose access.`))
-      return;
+    const ok = await confirm({
+      title: `Unlink from ${who}?`,
+      message: isOwner
+        ? `${who} will immediately lose access to everything you share.`
+        : `You'll immediately lose access to what ${who} shares. You'd need a new invite code to link again.`,
+      action: "Unlink",
+      danger: true,
+    });
+    if (!ok) return;
     if (!link) return;
     const { error } = await supabase
       .from("partner_links")
@@ -152,7 +162,7 @@ function PartnerSection() {
             <strong>{counterpart?.display_name || "your partner"}</strong>
             <span className="muted">
               {" "}
-              · since {new Date(link.created_at).toLocaleDateString()}
+              · since {format(parseISO(link.created_at), "d MMM yyyy")}
             </span>
           </p>
           <button className="btn danger" onClick={unlink}>
@@ -167,7 +177,7 @@ function PartnerSection() {
             </p>
             <div className="invite-code">{invite.code}</div>
             <p className="muted small">
-              Expires {new Date(invite.expires_at).toLocaleDateString()}. Works
+              Expires {format(parseISO(invite.expires_at), "d MMM, HH:mm")}. Works
               once.
             </p>
             <div className="row">

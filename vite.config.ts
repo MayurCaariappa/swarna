@@ -61,7 +61,8 @@ export default defineConfig({
         short_name: "Swarna",
         description: "A private period & pill tracker for two.",
         theme_color: "#ffffff",
-        background_color: "#ffffff",
+        // Splash colour on Android. Dark, so a dark-mode phone gets no white flash.
+        background_color: "#0f0d13",
         display: "standalone",
         orientation: "portrait",
         start_url: "/",

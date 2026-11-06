@@ -71,13 +71,19 @@ export default function Stats() {
     <div className="stack">
       <PageHeader title="Stats" />
 
-      <section className="card tiles">
+      <section className="card tiles" aria-label="Summary">
         <Tile
           value={summary.avgCycle}
           unit="days"
           label={pillMode ? "avg bleed-to-bleed" : "avg cycle"}
+          empty="needs 2 periods"
         />
-        <Tile value={summary.avgBleed} unit="days" label="avg bleed" />
+        <Tile
+          value={summary.avgBleed}
+          unit="days"
+          label="avg bleed"
+          empty="needs an ended period"
+        />
         <Tile
           value={summary.regularity ? REGULARITY[summary.regularity] : null}
           label={
@@ -236,10 +242,13 @@ function Tile({
   value,
   unit,
   label,
+  empty,
 }: {
   value: number | string | null;
   unit?: string;
   label: string;
+  /** Why there's no value yet, e.g. "needs 2 periods". */
+  empty?: string;
 }) {
   return (
     <div className="tile-stat">
@@ -248,6 +257,7 @@ function Tile({
         {value !== null && unit && <span className="unit"> {unit}</span>}
       </p>
       <p className="muted small">{label}</p>
+      {value === null && empty && <p className="muted tiny">{empty}</p>}
     </div>
   );
 }

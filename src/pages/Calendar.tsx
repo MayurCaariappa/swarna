@@ -1,9 +1,4 @@
-import {
-  differenceInCalendarDays,
-  format,
-  parseISO,
-  startOfMonth,
-} from "date-fns";
+import { differenceInCalendarDays, format, parseISO } from "date-fns";
 import { useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import CalendarGrid from "../components/calendar/CalendarGrid";
@@ -22,6 +17,7 @@ import {
   useTracking,
 } from "../data/hooks";
 import { buildMonthDays, monthGrid } from "../lib/calendarDays";
+import { useCalendarNav } from "../lib/useCalendarNav";
 import { useToday } from "../lib/useToday";
 
 export default function Calendar() {
@@ -31,8 +27,8 @@ export default function Calendar() {
   const tracking = useTracking(ownerId);
   const periods = usePeriods(ownerId);
 
-  const [month, setMonth] = useState(() => startOfMonth(parseISO(today)));
-  const [selected, setSelected] = useState<string>(today);
+  const { month, setMonth, selected, setSelected, goToday, atToday } =
+    useCalendarNav(today);
   const [editing, setEditing] = useState<PeriodRow | "new" | null>(null);
 
   const grid = monthGrid(month);
@@ -74,7 +70,10 @@ export default function Calendar() {
     <div className="stack">
       <CalendarGrid
         month={month}
-        onMonthChange={setMonth}
+        onMonthChange={(m) => {
+          setMonth(m);
+          setEditing(null);
+        }}
         days={days}
         today={today}
         selected={selected}
@@ -82,6 +81,11 @@ export default function Calendar() {
           setSelected(d);
           setEditing(null);
         }}
+        onToday={() => {
+          goToday();
+          setEditing(null);
+        }}
+        atToday={atToday}
         pillMode={pillMode}
         showPills
       />
@@ -153,7 +157,9 @@ export default function Calendar() {
                         ? "Taken ✓"
                         : sel.pill.missed
                           ? "Not marked — check your leaflet or doctor if missed"
-                          : "Upcoming"}
+                          : sel.date === today
+                            ? "Not taken yet"
+                            : "Upcoming"}
                     </span>
                   </span>
                   {sel.date <= today && (

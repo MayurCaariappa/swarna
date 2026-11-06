@@ -112,7 +112,7 @@ export default function PillToday({
 
   return (
     <>
-      <section className="blk blk-lilac">
+      <section className="blk blk-lilac" aria-label="Pill pack today">
         <div className="blk-head">
           <span className="blk-chip">
             {info.kind === "active"
@@ -182,10 +182,10 @@ export default function PillToday({
 
       {children}
 
-      <section className="card stack">
+      <section className="card stack" aria-labelledby="pack-title">
         <div className="section-head">
           <div>
-            <h2>
+            <h2 id="pack-title">
               {offset === 0
                 ? "This pack"
                 : offset === 1

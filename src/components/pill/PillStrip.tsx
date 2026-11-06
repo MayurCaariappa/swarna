@@ -13,7 +13,7 @@ interface Props {
 /** The pill-strip grid: taken / missed / today / upcoming / off days. */
 export default function PillStrip({ ownerId, days, logs, today }: Props) {
   return (
-    <div className="strip" role="grid">
+    <div className="strip" role="group" aria-label="Pill strip">
       {days.map((d) => {
         const taken = logs?.has(d.date) ?? false;
         const past = d.date < today;
@@ -21,7 +21,8 @@ export default function PillStrip({ ownerId, days, logs, today }: Props) {
         const state =
           d.kind === "off" ? "off" : taken ? "taken" : past ? "missed" : isToday ? "today" : "upcoming";
         const canToggle = d.kind === "active" && d.date <= today;
-        const label = `${d.kind === "active" ? `Pill ${d.number}` : `Off day ${d.number}`}, ${format(parseISO(d.date), "EEE d MMM")}, ${state}`;
+        const said = { off: d.predictedBleed ? "bleed expected" : "break", taken: "taken", missed: "not marked", today: "not taken yet", upcoming: "upcoming" }[state];
+        const label = `${d.kind === "active" ? `Pill ${d.number}` : `Break day ${d.number}`}, ${format(parseISO(d.date), "EEE d MMM")}, ${said}`;
 
         return (
           <button
@@ -44,9 +45,10 @@ export function StripLegend() {
   return (
     <div className="legend small muted">
       <span><i className="pill taken" /> taken</span>
-      <span><i className="pill missed" /> missed</span>
+      <span><i className="pill missed" /> not marked</span>
       <span><i className="pill upcoming" /> upcoming</span>
-      <span><i className="pill off bleed" /> expected bleed</span>
+      <span><i className="pill off" /> break</span>
+      <span><i className="pill off bleed" /> break · bleed expected</span>
     </div>
   );
 }

@@ -126,3 +126,14 @@ export function buildMonthDays<P extends PeriodLike>(
   }
   return out;
 }
+
+/** One wording for a pill's state everywhere: taken / not taken yet / not marked / upcoming. */
+export function pillStatus(
+  pill: { taken: boolean; missed: boolean },
+  date: string,
+  today: string,
+) {
+  if (pill.taken) return "taken";
+  if (pill.missed) return "not marked";
+  return date === today ? "not taken yet" : "upcoming";
+}

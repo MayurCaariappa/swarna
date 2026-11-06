@@ -1,4 +1,6 @@
 import { differenceInCalendarDays, format, parseISO } from "date-fns";
+import { ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import CycleChart from "../../components/stats/CycleChart";
 import { cycleLengths } from "../../lib/cycle";
 import { completedCycles, symptomPatterns } from "../../lib/stats";
@@ -50,7 +52,7 @@ export default function PartnerHistory() {
         Every period {ownerName} has logged, newest first.
       </p>
 
-      <section className="card stats-row">
+      <section className="card stats-row" aria-label="Averages">
         <div>
           <p className="stat">{periods.length}</p>
           <p className="muted small">bleeds logged</p>
@@ -58,10 +60,14 @@ export default function PartnerHistory() {
         <div>
           <p className="stat">{avgBleed ?? "–"}</p>
           <p className="muted small">avg days</p>
+          {avgBleed === null && (
+            <p className="muted tiny">needs an ended period</p>
+          )}
         </div>
         <div>
           <p className="stat">{avgCycle ?? "–"}</p>
           <p className="muted small">avg cycle</p>
+          {avgCycle === null && <p className="muted tiny">needs 2 periods</p>}
         </div>
       </section>
 
@@ -107,7 +113,12 @@ export default function PartnerHistory() {
                 )
               : null;
             return (
-              <div key={p.id} className="history-row">
+              <Link
+                key={p.id}
+                to={`/partner/calendar?date=${p.start_date}`}
+                className="history-row"
+                aria-label={`${format(parseISO(p.start_date), "d MMMM yyyy")}${p.end_date ? ` to ${format(parseISO(p.end_date), "d MMMM")}, ${len(p.start_date, p.end_date)} days` : ", ongoing"}. Open in calendar`}
+              >
                 <div>
                   <strong>
                     {format(parseISO(p.start_date), "d MMM yyyy")}
@@ -121,8 +132,9 @@ export default function PartnerHistory() {
                 </div>
                 <span className="history-len">
                   {p.end_date ? `${len(p.start_date, p.end_date)} d` : "…"}
+                  <ChevronRight size={16} aria-hidden />
                 </span>
-              </div>
+              </Link>
             );
           })}
         </section>

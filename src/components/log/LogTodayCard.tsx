@@ -28,7 +28,7 @@ export default function LogTodayCard({
 
   return (
     <>
-      <section className="tile blk-mint">
+      <section className="tile blk-mint" aria-label="Today's log">
         <div className="tile-icon">
           <PenLine size={18} />
         </div>

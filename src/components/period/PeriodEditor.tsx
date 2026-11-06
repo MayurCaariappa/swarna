@@ -2,6 +2,7 @@ import { useState } from "react";
 import { deletePeriod, savePeriod } from "../../data/actions";
 import type { PeriodRow } from "../../data/db";
 import { periodEnd } from "../../lib/cycle";
+import { useConfirm } from "../ui/Confirm";
 
 interface Props {
   ownerId: string;
@@ -28,6 +29,7 @@ export default function PeriodEditor({
     period ? period.end_date === null : (defaultStart ?? today) >= today,
   );
   const [end, setEnd] = useState(period?.end_date ?? defaultStart ?? today);
+  const confirm = useConfirm();
 
   const finalEnd = ongoing ? null : end;
   const overlap = all.find(
@@ -53,7 +55,14 @@ export default function PeriodEditor({
   }
 
   async function remove() {
-    if (!period || !confirm("Delete this period?")) return;
+    if (!period) return;
+    const ok = await confirm({
+      title: "Delete this period?",
+      message: "It's removed from your calendar, stats and your partner's view.",
+      action: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     await deletePeriod(period);
     onDone();
   }

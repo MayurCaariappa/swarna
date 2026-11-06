@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { addMonths, format, parseISO } from "date-fns";
-import type { DayInfo } from "../../lib/calendarDays";
+import { useRef } from "react";
+import { pillStatus, type DayInfo } from "../../lib/calendarDays";
 
 interface Props {
   month: Date;
@@ -9,6 +10,9 @@ interface Props {
   today: string;
   selected: string | null;
   onSelect: (date: string) => void;
+  /** Jump back to today; the button shows only when away from it. */
+  onToday: () => void;
+  atToday: boolean;
   pillMode: boolean;
   showPills: boolean;
 }
@@ -21,9 +25,28 @@ export default function CalendarGrid({
   today,
   selected,
   onSelect,
+  onToday,
+  atToday,
   pillMode,
   showPills,
 }: Props) {
+  // Swipe left / right on the grid to change month.
+  const touch = useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touch.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touch.current;
+    touch.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5)
+      onMonthChange(addMonths(month, dx < 0 ? 1 : -1));
+  };
+
   return (
     <>
       <div className="cal-head">
@@ -34,7 +57,17 @@ export default function CalendarGrid({
         >
           <ChevronLeft size={18} />
         </button>
-        <h1>{format(month, "MMMM yyyy")}</h1>
+        <div className="cal-title">
+          <h1 aria-live="polite">{format(month, "MMMM yyyy")}</h1>
+          {/* Always in the layout (hidden when not needed) so the title never shifts. */}
+          <button
+            className="today-btn"
+            onClick={onToday}
+            style={atToday ? { visibility: "hidden" } : undefined}
+          >
+            Today
+          </button>
+        </div>
         <button
           className="icon-btn"
           onClick={() => onMonthChange(addMonths(month, 1))}
@@ -44,10 +77,14 @@ export default function CalendarGrid({
         </button>
       </div>
 
-      <div className="card cal-card stack">
+      <div
+        className="card cal-card stack"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         <div className="cal">
           {["M", "T", "W", "T", "F", "S", "S"].map((w, i) => (
-            <div key={i} className="cal-wd">
+            <div key={i} className="cal-wd" aria-hidden>
               {w}
             </div>
           ))}
@@ -65,15 +102,20 @@ export default function CalendarGrid({
                 d.date === today ? "today" : "",
                 d.date === selected ? "selected" : "",
               ].join(" ")}
+              aria-label={dayLabel(d, today)}
+              aria-pressed={d.date === selected}
               onClick={() => onSelect(d.date)}
             >
-              {d.logged && <i className="log-mark" aria-label="logged" />}
               <span>{parseISO(d.date).getDate()}</span>
-              {d.pill && (
-                <i
-                  className={`dot ${d.pill.taken ? "taken" : d.pill.missed ? "missed" : ""}`}
-                />
-              )}
+              {/* Marks sit under the number, always the same height so numbers line up. */}
+              <span className="marks" aria-hidden>
+                {d.pill && (
+                  <i
+                    className={`dot ${d.pill.taken ? "taken" : d.pill.missed ? "missed" : ""}`}
+                  />
+                )}
+                {d.logged && <i className="log-mark" />}
+              </span>
             </button>
           ))}
         </div>
@@ -86,7 +128,7 @@ export default function CalendarGrid({
             <i className="sw predicted" /> predicted
           </span>
           <span>
-            <i className="log-mark legend-mark" /> logged
+            <i className="log-mark" /> logged
           </span>
           {pillMode ? (
             <>
@@ -118,4 +160,21 @@ export default function CalendarGrid({
       </div>
     </>
   );
+}
+
+/** What a screen reader says for a day, e.g. "Wednesday 4 November, pill 1 taken, logged". */
+function dayLabel(d: DayInfo, today: string) {
+  const parts = [format(parseISO(d.date), "EEEE d MMMM")];
+  if (d.date === today) parts.push("today");
+  if (d.period) parts.push("period");
+  if (d.predictedBleed) parts.push("bleed predicted");
+  if (d.pill)
+    parts.push(
+      `pill ${d.pill.number} ${pillStatus(d.pill, d.date, today)}`,
+    );
+  if (d.off) parts.push(`break day ${d.off}`);
+  if (d.ovulation) parts.push("ovulation estimated");
+  else if (d.fertile) parts.push("fertile window");
+  if (d.logged) parts.push("logged");
+  return parts.join(", ");
 }

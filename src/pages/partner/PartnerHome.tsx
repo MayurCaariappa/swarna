@@ -1,5 +1,6 @@
 import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
-import { Droplet, Pill } from "lucide-react";
+import { ChevronRight, Droplet, Pill } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import Disclaimer from "../../components/Disclaimer";
 import WelcomeCard from "../../components/WelcomeCard";
@@ -194,7 +195,10 @@ export default function PartnerHome() {
       )}
 
       {showPeriods && tracking && (
-        <section className="blk blk-lilac">
+        <section
+          className="blk blk-lilac"
+          aria-label={cfg ? "Pill pack today" : "Cycle today"}
+        >
           <div className="blk-head">
             <span className={`blk-chip ${bleeding ? "bleed" : ""}`}>
               {bleeding ? `Bleeding · day ${bleedDay}` : "Not bleeding"}
@@ -222,12 +226,17 @@ export default function PartnerHome() {
       )}
 
       {(showPeriods && next) || pillTile ? (
-        <div className="quick">
+        <div className="quick" role="group" aria-label="At a glance">
           {showPeriods && next && (
-            <section className={`tile blk-rose ${pillTile ? "" : "span-2"}`}>
+            <Link
+              to={`/partner/calendar?date=${toISODate(next.start)}`}
+              className={`tile tile-link blk-rose ${pillTile ? "" : "span-2"}`}
+              aria-label={`Next bleed: ${nextValue}${bleeding ? "" : `, about ${format(next.start, "d MMMM")} to ${format(next.end, "d MMMM")}`}. Open in calendar`}
+            >
               <div className="tile-icon">
                 <Droplet size={18} />
               </div>
+              <ChevronRight className="tile-go" size={18} aria-hidden />
               <p className="tile-label">Next bleed</p>
               <p className="tile-value">{nextValue}</p>
               {!bleeding && (
@@ -235,30 +244,33 @@ export default function PartnerHome() {
                   ~{format(next.start, "d MMM")} – {format(next.end, "d MMM")}
                 </p>
               )}
-            </section>
+            </Link>
           )}
           {pillTile && (
-            <section
-              className={`tile blk-mint ${showPeriods && next ? "" : "span-2"}`}
+            <Link
+              to="/partner/calendar"
+              className={`tile tile-link blk-mint ${showPeriods && next ? "" : "span-2"}`}
+              aria-label={`Pill today: ${takenToday ? `taken${takenTime ? ` at ${format(parseISO(takenTime), "HH:mm")}` : ""}` : "not taken yet"}. Open in calendar`}
             >
               <div className="tile-icon">
                 <Pill size={18} />
               </div>
+              <ChevronRight className="tile-go" size={18} aria-hidden />
               <p className="tile-label">Pill today</p>
-              <p className="tile-value">{takenToday ? "Taken ✓" : "Not yet"}</p>
+              <p className="tile-value">{takenToday ? "Taken ✓" : "Not taken yet"}</p>
               {takenToday && takenTime && (
                 <p className="tile-note">
                   at {format(parseISO(takenTime), "HH:mm")}
                 </p>
               )}
-            </section>
+            </Link>
           )}
         </div>
       ) : null}
 
       {todayLog && (
-        <section className="card stack">
-          <h2>{name} today</h2>
+        <section className="card stack" aria-labelledby="her-today">
+          <h2 id="her-today">{name} today</h2>
           <LogSummary log={todayLog} />
         </section>
       )}
