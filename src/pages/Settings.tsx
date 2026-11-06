@@ -3,7 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import RemindersSection from "../components/RemindersSection";
 import TrackingSection from "../components/TrackingSection";
+import { useTracking } from "../data/hooks";
 import { useSyncStatus } from "../data/sync";
+import { getPushState, type PushState } from "../lib/push";
 import { isStandalone } from "../lib/platform";
 import { errorMessage, supabase } from "../lib/supabase";
 import type { InviteCode, SharingSettings } from "../lib/types";
@@ -12,6 +14,15 @@ export default function Settings() {
   const { profile, session, signOut } = useAuth();
   const navigate = useNavigate();
   const isOwner = profile?.role === "owner";
+
+  // Read what the sections need from the phone first, then show them all at
+  // once — otherwise each pops in separately and the page jumps.
+  const tracking = useTracking(isOwner ? session?.user.id : undefined);
+  const [push, setPush] = useState<PushState | null>(null);
+  useEffect(() => {
+    void getPushState().then(setPush);
+  }, []);
+  const ready = push !== null && tracking !== undefined;
 
   return (
     <div className="stack">
@@ -32,38 +43,43 @@ export default function Settings() {
         </p>
       </section>
 
-      {isOwner && <TrackingSection />}
-      <RemindersSection />
-      <PartnerSection />
-      {isOwner && <SharingSection />}
+      {ready && (
+        <>
+          {isOwner && <TrackingSection tracking={tracking} />}
+          <RemindersSection initial={push} />
+          <PartnerSection />
+          {isOwner && <SharingSection />}
 
-      <section className="card stack">
-        <h2>App</h2>
-        {isOwner && (
-          <Link to="/export" className="row-link">
-            Export for your doctor (PDF / CSV)
-            <span aria-hidden>›</span>
-          </Link>
-        )}
-        <Link to="/install" className="row-link">
-          {isStandalone()
-            ? "Installed ✓ — how to install on another phone"
-            : "Install on your Home Screen"}
-          <span aria-hidden>›</span>
-        </Link>
-        {isOwner && <SyncLine />}
-      </section>
+          <section className="card stack">
+            <h2>App</h2>
+            {isOwner && (
+              <Link to="/export" className="row-link">
+                Export for your doctor (PDF / CSV)
+                <span aria-hidden>›</span>
+              </Link>
+            )}
+            <Link to="/install" className="row-link">
+              {isStandalone()
+                ? "Installed ✓ — how to install on another phone"
+                : "Install on your Home Screen"}
+              <span aria-hidden>›</span>
+            </Link>
+            {isOwner && <SyncLine />}
+          </section>
 
-      <FeedbackSection />
+          <FeedbackSection />
 
-      <button className="btn" onClick={signOut}>
-        Sign out
-      </button>
-      <p className="muted center small">
-        Swarna · version {__APP_VERSION__}
-        <br />
-        Predictions are estimates — not for contraception.
-      </p>
+          <button className="btn" onClick={signOut}>
+            Sign out
+          </button>
+
+          <p className="muted center small">
+            Swarna · version {__APP_VERSION__}
+            <br />
+            Predictions are estimates — not for contraception.
+          </p>
+        </>
+      )}
     </div>
   );
 }
@@ -212,7 +228,24 @@ const SHARE_OPTIONS: {
 
 function SharingSection() {
   const { session } = useAuth();
-  const [settings, setSettings] = useState<SharingSettings | null>(null);
+  // Shown from the copy saved on this phone straight away (and offline),
+  // then refreshed from the server.
+  const key = `swarna.sharing.${session?.user.id}`;
+  const [settings, setSettingsState] = useState<SharingSettings | null>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(key) ?? "null");
+    } catch {
+      return null;
+    }
+  });
+  const setSettings = (next: SharingSettings | null) => {
+    setSettingsState(next);
+    try {
+      localStorage.setItem(key, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+  };
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -223,9 +256,12 @@ function SharingSection() {
       .eq("owner_id", session.user.id)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (error) setError(errorMessage(error));
-        else setSettings(data);
+        if (error) {
+          // Offline with a saved copy: keep showing it quietly.
+          if (!localStorage.getItem(key)) setError(errorMessage(error));
+        } else setSettings(data);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   async function toggle(key: keyof SharingSettings) {

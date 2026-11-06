@@ -1,14 +1,16 @@
 import { useAuth } from "../auth/AuthProvider";
 import { saveTracking } from "../data/actions";
-import { DEFAULT_TRACKING } from "../data/db";
-import { useTracking } from "../data/hooks";
+import { DEFAULT_TRACKING, type TrackingRow } from "../data/db";
 
 /** Settings → Tracking: pill vs natural mode, pack schedule, reminder time. */
-export default function TrackingSection() {
+/** `tracking` is loaded by the Settings page so the whole page appears at once. */
+export default function TrackingSection({
+  tracking,
+}: {
+  tracking: TrackingRow | null;
+}) {
   const { session } = useAuth();
   const ownerId = session!.user.id;
-  const tracking = useTracking(ownerId);
-  if (tracking === undefined) return null;
 
   const t = tracking ?? { ...DEFAULT_TRACKING, owner_id: ownerId };
   const save = (patch: Parameters<typeof saveTracking>[1]) =>

@@ -1,26 +1,22 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import {
   disablePush,
   enablePush,
-  getPushState,
   sendTestPush,
   type PushState,
 } from "../lib/push";
 import { errorMessage } from "../lib/supabase";
 
 /** Settings → Reminders: turn push on/off for THIS phone. */
-export default function RemindersSection() {
+/** `initial` is read by the Settings page so the whole page appears at once. */
+export default function RemindersSection({ initial }: { initial: PushState }) {
   const { profile } = useAuth();
   const isOwner = profile?.role === "owner";
-  const [state, setState] = useState<PushState | null>(null);
+  const [state, setState] = useState<PushState>(initial);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
-
-  useEffect(() => {
-    getPushState().then(setState);
-  }, []);
 
   async function run(fn: () => Promise<PushState | string>) {
     setBusy(true);
@@ -35,8 +31,6 @@ export default function RemindersSection() {
       setBusy(false);
     }
   }
-
-  if (state === null) return null;
 
   return (
     <section className="card stack">

@@ -14,6 +14,35 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    // Start downloading Manrope with the page itself (not after the CSS asks for
+    // it), so the first paint already uses it — no font flash on refresh.
+    {
+      name: "preload-manrope",
+      apply: "build",
+      transformIndexHtml: {
+        order: "post",
+        handler(_html, ctx) {
+          const font = Object.keys(ctx.bundle ?? {}).find((f) =>
+            /manrope-latin-wght-normal.*\.woff2$/.test(f),
+          );
+          return font
+            ? [
+                {
+                  tag: "link",
+                  attrs: {
+                    rel: "preload",
+                    href: `/${font}`,
+                    as: "font",
+                    type: "font/woff2",
+                    crossorigin: "",
+                  },
+                  injectTo: "head-prepend",
+                },
+              ]
+            : [];
+        },
+      },
+    },
     VitePWA({
       // Our own service worker (src/sw.ts) so we can add Web Push handlers to it later.
       strategies: "injectManifest",

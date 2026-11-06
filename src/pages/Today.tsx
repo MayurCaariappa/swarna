@@ -19,6 +19,7 @@ export default function Today() {
   const today = useToday();
   const tracking = useTracking(ownerId);
   const periods = usePeriods(ownerId);
+  const ready = tracking !== undefined && periods !== undefined;
 
   const tiles = periods && (
     <div className="quick">
@@ -44,8 +45,7 @@ export default function Today() {
 
       <WelcomeCard />
 
-      {tracking === undefined ||
-      periods === undefined ? null : tracking?.mode === "natural" ? (
+      {!ready ? null : tracking?.mode === "natural" ? (
         <NaturalToday tracking={tracking} periods={periods} today={today}>
           {tiles}
         </NaturalToday>
@@ -57,7 +57,8 @@ export default function Today() {
         <PackSetup ownerId={ownerId} today={today} />
       )}
 
-      {!link && (
+      {/* The hint and disclaimer wait for the hero, so they don't jump down when it appears. */}
+      {ready && !link && (
         <Link to="/settings" className="card hint row-between">
           <span>
             <strong>Invite your partner</strong>
@@ -69,7 +70,7 @@ export default function Today() {
         </Link>
       )}
 
-      <Disclaimer />
+      {ready && <Disclaimer />}
     </div>
   );
 }
