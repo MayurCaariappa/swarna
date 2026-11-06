@@ -18,7 +18,8 @@ const days = (a: string, b: string) =>
 
 /** Last day of a period for display: its end, or (if still open) today, capped. */
 export function periodEnd(p: Period, today: string): string {
-  if (p.end_date) return p.end_date;
+  // An end date after today (saved by an older version) only counts up to today.
+  if (p.end_date) return p.end_date > today && p.start_date <= today ? today : p.end_date;
   const cap = toISODate(addDays(parseISO(p.start_date), MAX_OPEN_BLEED - 1));
   return today < cap ? today : cap;
 }

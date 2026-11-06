@@ -1219,7 +1219,7 @@ a.btn {
   text-align: center;
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--faint);
+  color: var(--muted); /* ≥ 5:1 on the card (WCAG AA) */
   padding-bottom: 6px;
 }
 .cal-day {
@@ -1239,8 +1239,23 @@ a.btn {
   border-radius: 50%;
   cursor: pointer;
 }
+/* Days outside the month: muted text (≥ 5:1) and no fills, instead of fading
+   the whole cell (which dropped contrast to ~2:1). */
 .cal-day.out {
-  opacity: 0.3;
+  color: var(--muted);
+  font-weight: 600;
+}
+.cal-day.out.off,
+.cal-day.out.fertile,
+.cal-day.out.predicted {
+  background: none;
+}
+.cal-day.out.bleed {
+  background: var(--bleed-soft); /* muted text would be ~4.3:1 here */
+  color: var(--text);
+}
+.cal-day.out .marks {
+  visibility: hidden;
 }
 .cal-day.off {
   background: var(--off-day);
@@ -1257,7 +1272,7 @@ a.btn {
 }
 .cal-day.bleed {
   background: var(--bleed);
-  color: #fff;
+  color: var(--ink); /* ink on rose ≈ 5:1; white was ~3.7:1 */
 }
 .cal-day.today span {
   font-weight: 800;
@@ -1282,10 +1297,10 @@ a.btn {
   background: var(--danger);
 }
 .cal-day.bleed .dot {
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(23, 18, 31, 0.35);
 }
 .cal-day.bleed .dot.taken {
-  background: #fff;
+  background: var(--ink);
 }
 /* Pill dot + logged ring sit side by side under the number. */
 .marks {
@@ -1310,7 +1325,7 @@ a.btn {
   height: 8px;
 }
 .cal-day.bleed .log-mark {
-  box-shadow: inset 0 0 0 1.5px #fff;
+  box-shadow: inset 0 0 0 1.5px var(--ink);
 }
 .sw {
   display: inline-block;
@@ -1761,4 +1776,10 @@ details[open] summary {
   .snack {
     animation: none;
   }
+}
+
+/* Keyboard focus on calendar days (arrow keys move it). */
+.cal-day:focus-visible {
+  outline: 2.5px solid var(--lilac);
+  outline-offset: 2px;
 }

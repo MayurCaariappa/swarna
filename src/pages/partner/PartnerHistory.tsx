@@ -91,7 +91,11 @@ export default function PartnerHistory() {
         <div>
           <p className="stat">{avgCycle ?? "–"}</p>
           <p className="muted small">avg cycle</p>
-          {avgCycle === null && <p className="muted tiny">needs 2 periods</p>}
+          {avgCycle === null && (
+            <p className="muted tiny">
+              {cfg ? "needs 2 break-week bleeds" : "needs 2 periods"}
+            </p>
+          )}
         </div>
       </section>
 

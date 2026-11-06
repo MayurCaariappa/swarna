@@ -1,3 +1,4 @@
+import { format, parseISO } from "date-fns";
 import { useAuth } from "../auth/AuthProvider";
 import Disclaimer from "../components/Disclaimer";
 import InviteHint from "../components/InviteHint";
@@ -30,11 +31,7 @@ export default function Today() {
   return (
     <div className="stack">
       <PageHeader
-        eyebrow={new Date(today + "T12:00").toLocaleDateString(undefined, {
-          weekday: "long",
-          day: "numeric",
-          month: "short",
-        })}
+        eyebrow={format(parseISO(today), "EEEE d MMM")}
         title={`${greeting()
           .replace("Good ", "")
           .replace(/^./, (c) =>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { saveTracking } from "../data/actions";
 import { useConfirm } from "./ui/Confirm";
@@ -39,8 +40,15 @@ export default function TrackingSection({
 
   const num = (v: string, min: number, max: number) => {
     const n = Number(v);
-    return Number.isInteger(n) && n >= min && n <= max ? n : null;
+    return v.trim() !== "" && Number.isInteger(n) && n >= min && n <= max
+      ? n
+      : null;
   };
+  // What she's typing, so an invalid value can be shown with a message (not saved).
+  const [activeText, setActiveText] = useState<string | null>(null);
+  const [breakText, setBreakText] = useState<string | null>(null);
+  const activeBad = activeText !== null && num(activeText, 1, 365) === null;
+  const breakBad = breakText !== null && num(breakText, 0, 60) === null;
 
   return (
     <section className="card stack">
@@ -79,11 +87,14 @@ export default function TrackingSection({
               <input
                 type="number"
                 inputMode="numeric"
-                defaultValue={t.active_days}
+                value={activeText ?? t.active_days}
+                aria-invalid={activeBad || undefined}
                 onChange={(e) => {
+                  setActiveText(e.target.value);
                   const n = num(e.target.value, 1, 365);
                   if (n !== null) save({ active_days: n });
                 }}
+                onBlur={() => !activeBad && setActiveText(null)}
               />
             </label>
             <label>
@@ -91,14 +102,24 @@ export default function TrackingSection({
               <input
                 type="number"
                 inputMode="numeric"
-                defaultValue={t.break_days}
+                value={breakText ?? t.break_days}
+                aria-invalid={breakBad || undefined}
                 onChange={(e) => {
+                  setBreakText(e.target.value);
                   const n = num(e.target.value, 0, 60);
                   if (n !== null) save({ break_days: n });
                 }}
+                onBlur={() => !breakBad && setBreakText(null)}
               />
             </label>
           </div>
+          {(activeBad || breakBad) && (
+            <p className="error small" role="alert">
+              {activeBad
+                ? `Active pills must be a whole number from 1 to 365 — not saved (still ${t.active_days}).`
+                : `Break days must be a whole number from 0 to 60 — not saved (still ${t.break_days}).`}
+            </p>
+          )}
           <label>
             Reminder time
             <input

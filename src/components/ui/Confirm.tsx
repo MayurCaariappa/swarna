@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 
 // An in-app "Are you sure?" sheet, used instead of the browser's confirm()
 // (which shows the website address as a header in the installed iOS app).
@@ -60,18 +61,68 @@ function ConfirmSheet({
   onClose,
 }: ConfirmOptions & { onClose: (ok: boolean) => void }) {
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  // Latest onClose without re-running the effect (which would re-lock / re-focus).
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  });
 
   useEffect(() => {
+    // Remember what had focus (e.g. the Unlink button) to give it back on close.
+    const opener = document.activeElement as HTMLElement | null;
     // Safe default: focus lands on Cancel.
     cancelRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose(false);
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
-  return (
+    // Lock the page behind the sheet (keep its scroll position).
+    const { body } = document;
+    const y = window.scrollY;
+    const prev = body.style.cssText;
+    body.style.cssText += `;position:fixed;top:${-y}px;left:0;right:0;overflow:hidden`;
+    // Everything else is out of reach for screen readers and taps.
+    const root = document.getElementById("root");
+    root?.setAttribute("inert", "");
+    root?.setAttribute("aria-hidden", "true");
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeRef.current(false);
+        return;
+      }
+      if (e.key !== "Tab" || !sheetRef.current) return;
+      // Keep Tab cycling inside the sheet.
+      const items = [
+        ...sheetRef.current.querySelectorAll<HTMLElement>("button, [href], input"),
+      ];
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const inside = sheetRef.current.contains(document.activeElement);
+      if (e.shiftKey && (document.activeElement === first || !inside)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (document.activeElement === last || !inside)) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      root?.removeAttribute("inert");
+      root?.removeAttribute("aria-hidden");
+      body.style.cssText = prev;
+      window.scrollTo(0, y);
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+    };
+  }, []);
+
+  // Rendered outside #root, so the app behind can be made inert.
+  return createPortal(
     <div className="confirm-backdrop" onClick={() => onClose(false)}>
       <div
+        ref={sheetRef}
         className="confirm-sheet"
         role="alertdialog"
         aria-modal="true"
@@ -97,7 +148,8 @@ function ConfirmSheet({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

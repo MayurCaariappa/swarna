@@ -302,7 +302,7 @@ function SharingSection({ reminderTime }: { reminderTime: string | null }) {
       !settings.share_pill_status &&
       !(await confirm({
         title: "Share pill status too?",
-        message: `The alert tells ${who} when your pill isn't marked, so it needs Pill status turned on. ${who} will also see "taken today ✓".`,
+        message: `The alert tells ${who} when your pill isn't marked, so it needs Pill status turned on. ${who.charAt(0).toUpperCase() + who.slice(1)} will also see "taken today ✓".`,
         action: "Share and turn on",
       }))
     )
@@ -316,9 +316,21 @@ function SharingSection({ reminderTime }: { reminderTime: string | null }) {
 
   // The alert should come after her reminder and its +30 / +60 re-reminders.
   const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
-  const alertTime = (settings?.partner_pill_alert_time ?? "23:00").slice(0, 5);
-  const tooEarly =
-    reminderTime !== null && toMin(alertTime) <= toMin(reminderTime) + 60;
+  const savedAlert = (settings?.partner_pill_alert_time ?? "23:00").slice(0, 5);
+  const isTooEarly = (t: string) => {
+    if (reminderTime === null) return false;
+    const end = toMin(reminderTime) + 60; // last re-reminder
+    // A late reminder (after 23:00) can't have a later alert the same day; only
+    // flag times between the reminder and midnight then.
+    return end < 1440
+      ? toMin(t) <= end
+      : toMin(t) >= toMin(reminderTime);
+  };
+  // A too-early time is shown in the box but not saved.
+  const [alertDraft, setAlertDraft] = useState<string | null>(null);
+  const alertTime = alertDraft ?? savedAlert;
+  const draftRejected = alertDraft !== null && isTooEarly(alertDraft);
+  const savedTooEarly = !draftRejected && isTooEarly(savedAlert);
 
   async function set(patch: Partial<SharingSettings>) {
     if (!settings) return;
@@ -376,18 +388,33 @@ function SharingSection({ reminderTime }: { reminderTime: string | null }) {
               <input
                 type="time"
                 value={alertTime}
-                onChange={(e) =>
-                  e.target.value &&
-                  set({ partner_pill_alert_time: e.target.value })
-                }
+                aria-invalid={draftRejected || undefined}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (!v) return;
+                  setAlertDraft(v);
+                  if (!isTooEarly(v)) {
+                    void set({ partner_pill_alert_time: v });
+                    setAlertDraft(null);
+                  }
+                }}
               />
             </label>
           )}
-          {settings.partner_pill_alert && tooEarly && (
-            <p className="error small">
-              This is before your reminders finish ({reminderTime} plus re-reminders
-              at +30 and +60 min). Pick a time at least an hour after{" "}
-              {reminderTime}, or {who} may be alerted before you've had a chance.
+          {settings.partner_pill_alert && draftRejected && (
+            <p className="error small" role="alert">
+              Not saved — {alertDraft} is before your reminders finish (
+              {reminderTime}, then +30 and +60 min). Pick a time after{" "}
+              {reminderTime && addHour(reminderTime)}. The alert stays at{" "}
+              {savedAlert}.
+            </p>
+          )}
+          {settings.partner_pill_alert && savedTooEarly && (
+            <p className="error small" role="alert">
+              Your alert ({savedAlert}) is now before your reminders finish (
+              {reminderTime}, then +30 and +60 min), so {who} may be alerted
+              before you've had a chance. Pick a time after{" "}
+              {reminderTime && addHour(reminderTime)}.
             </p>
           )}
         </>
@@ -457,4 +484,10 @@ function SyncLine() {
             ? `All changes synced · ${new Date(lastSyncedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
             : "Saved on this phone";
   return <p className="muted small">{text}</p>;
+}
+
+/** "21:00" → "22:00" (wraps past midnight). */
+function addHour(hhmm: string) {
+  const m = (Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5)) + 60) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 }

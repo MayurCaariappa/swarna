@@ -1,7 +1,17 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { addMonths, format, parseISO } from "date-fns";
-import { useRef } from "react";
+import {
+  addDays,
+  addMonths,
+  endOfWeek,
+  format,
+  isSameMonth,
+  parseISO,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
+import { useEffect, useRef } from "react";
 import { pillStatus, type DayInfo } from "../../lib/calendarDays";
+import { toISODate } from "../../lib/pill";
 
 interface Props {
   month: Date;
@@ -47,6 +57,52 @@ export default function CalendarGrid({
       onMonthChange(addMonths(month, dx < 0 ? 1 : -1));
   };
 
+  // Keyboard: one Tab stop for the whole grid (the selected day); arrows move
+  // by day / week, Home / End to the week's ends, Page Up / Down by month.
+  const gridRef = useRef<HTMLDivElement>(null);
+  const keyMoved = useRef(false);
+  const tabDate = days.some((d) => d.date === selected)
+    ? selected
+    : (days.find((d) => d.inMonth)?.date ?? null);
+
+  useEffect(() => {
+    if (!keyMoved.current) return;
+    keyMoved.current = false;
+    gridRef.current
+      ?.querySelector<HTMLButtonElement>(`[data-date="${selected}"]`)
+      ?.focus();
+  }, [selected, month]);
+
+  const onGridKey = (e: React.KeyboardEvent) => {
+    const from = (e.target as HTMLElement).dataset.date;
+    if (!from) return;
+    const d = parseISO(from);
+    const WEEK = { weekStartsOn: 1 as const };
+    const next =
+      e.key === "ArrowLeft"
+        ? addDays(d, -1)
+        : e.key === "ArrowRight"
+          ? addDays(d, 1)
+          : e.key === "ArrowUp"
+            ? addDays(d, -7)
+            : e.key === "ArrowDown"
+              ? addDays(d, 7)
+              : e.key === "Home"
+                ? startOfWeek(d, WEEK)
+                : e.key === "End"
+                  ? endOfWeek(d, WEEK)
+                  : e.key === "PageUp"
+                    ? addMonths(d, -1)
+                    : e.key === "PageDown"
+                      ? addMonths(d, 1)
+                      : null;
+    if (!next) return;
+    e.preventDefault();
+    keyMoved.current = true;
+    if (!isSameMonth(next, month)) onMonthChange(startOfMonth(next));
+    onSelect(toISODate(next)); // after the month change, so this day stays selected
+  };
+
   return (
     <>
       <div className="cal-head">
@@ -82,7 +138,13 @@ export default function CalendarGrid({
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <div className="cal">
+        <div
+          className="cal"
+          ref={gridRef}
+          role="group"
+          aria-label={`${format(month, "MMMM yyyy")}. Use the arrow keys to move between days.`}
+          onKeyDown={onGridKey}
+        >
           {["M", "T", "W", "T", "F", "S", "S"].map((w, i) => (
             <div key={i} className="cal-wd" aria-hidden>
               {w}
@@ -104,6 +166,8 @@ export default function CalendarGrid({
               ].join(" ")}
               aria-label={dayLabel(d, today)}
               aria-pressed={d.date === selected}
+              data-date={d.date}
+              tabIndex={d.date === tabDate ? 0 : -1}
               onClick={() => onSelect(d.date)}
             >
               <span>{parseISO(d.date).getDate()}</span>

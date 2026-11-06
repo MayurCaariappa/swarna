@@ -5,10 +5,11 @@ import { useAuth } from "../auth/AuthProvider";
 import { startSync } from "../data/sync";
 import { PartnerDataProvider } from "../partner/PartnerData";
 import { refreshPushSubscription } from "../lib/push";
+import { supabase } from "../lib/supabase";
 import { useOnline } from "../lib/useOnline";
 
 export default function Layout() {
-  const { profile, session } = useAuth();
+  const { profile, session, refresh } = useAuth();
   const online = useOnline();
   const isOwner = profile?.role === "owner";
   const uid = session?.user.id;
@@ -25,6 +26,23 @@ export default function Layout() {
   useEffect(() => {
     if (uid) void refreshPushSubscription();
   }, [uid]);
+
+  // Keep the saved timezone in step with this phone (it was only set at sign-up),
+  // so pill reminders and the partner's "today" follow where she actually is.
+  const savedTz = profile?.timezone;
+  useEffect(() => {
+    if (!uid || !savedTz) return;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!tz || tz === savedTz) return;
+    void supabase
+      .from("profiles")
+      .update({ timezone: tz })
+      .eq("id", uid)
+      .then(({ error }) => {
+        if (!error) void refresh();
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid, savedTz]);
 
   // Keep the phone's data and Supabase in sync while the app is open.
   useEffect(() => {

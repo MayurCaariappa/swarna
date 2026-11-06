@@ -41,7 +41,7 @@ export default function PillStrip({ ownerId, days, logs, today }: Props) {
               );
             }}
           >
-            {state === "taken" ? "✓" : state === "missed" ? "!" : d.kind === "active" ? d.number : ""}
+            {state === "taken" ? "✓" : d.kind === "active" ? d.number : ""}
           </button>
         );
       })}

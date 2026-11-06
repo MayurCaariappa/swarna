@@ -91,7 +91,7 @@ export default function Stats() {
           value={summary.avgCycle}
           unit="days"
           label={pillMode ? "avg bleed-to-bleed" : "avg cycle"}
-          empty="needs 2 periods"
+          empty={pillMode ? "needs 2 break-week bleeds" : "needs 2 periods"}
         />
         <Tile
           value={summary.avgBleed}
@@ -125,7 +125,11 @@ export default function Stats() {
       <section className="card stack">
         <h2>Recent cycles</h2>
         {cycles.length === 0 ? (
-          <p className="muted small">Appears after two logged periods.</p>
+          <p className="muted small">
+            {pillMode
+              ? "Appears after two break-week bleeds (bleeds during active pills aren't cycles)."
+              : "Appears after two logged periods."}
+          </p>
         ) : (
           <>
             <CycleChart cycles={cycles} average={summary.avgCycle} />

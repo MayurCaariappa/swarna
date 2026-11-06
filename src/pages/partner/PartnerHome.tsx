@@ -34,15 +34,33 @@ export default function PartnerHome() {
     logs,
   } = usePartnerData();
   const todayLog = logs?.[today];
-  const { profile } = useAuth();
+  const { profile, counterpart } = useAuth();
+  // When she's in another timezone, say what time it is for her.
+  const herTz = counterpart?.timezone;
+  const myTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  let herTime = "";
+  if (herTz && herTz !== myTz) {
+    try {
+      const fmt = (tz: string) =>
+        new Intl.DateTimeFormat("en-GB", {
+          timeZone: tz,
+          weekday: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(new Date());
+      if (fmt(herTz) !== fmt(myTz)) herTime = `Her time: ${fmt(herTz)}`;
+    } catch {
+      /* unknown timezone name */
+    }
+  }
   const header = (
     <PageHeader
-      eyebrow={new Date(today + "T12:00").toLocaleDateString(undefined, {
-        weekday: "long",
-        day: "numeric",
-        month: "short",
-      })}
-      subtitle={`Here's how ${name} is doing`}
+      eyebrow={format(parseISO(today), "EEEE d MMM")}
+      subtitle={
+        herTime
+          ? `Here's how ${name} is doing · ${herTime}`
+          : `Here's how ${name} is doing`
+      }
       title={`${greeting()
         .replace("Good ", "")
         .replace(/^./, (c) =>

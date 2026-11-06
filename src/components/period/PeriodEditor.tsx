@@ -46,6 +46,8 @@ export default function PeriodEditor({
       ? "Start can't be in the future"
       : finalEnd && finalEnd < start
         ? "End must be on or after the start"
+        : finalEnd && finalEnd > today
+          ? "End can't be in the future — switch on “Still bleeding” instead"
         : overlap
           ? "This overlaps another logged period"
           : "";
@@ -90,6 +92,7 @@ export default function PeriodEditor({
             type="date"
             value={end}
             min={start}
+            max={today}
             disabled={ongoing}
             onChange={(e) => setEnd(e.target.value)}
           />
