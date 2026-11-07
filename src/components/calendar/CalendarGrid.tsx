@@ -105,17 +105,21 @@ export default function CalendarGrid({
 
   return (
     <>
+      {/* Month left (like every page title), controls grouped on the right. */}
       <div className="cal-head">
-        <button
-          className="icon-btn"
-          onClick={() => onMonthChange(addMonths(month, -1))}
-          aria-label="Previous month"
+        {/* Month in ink, year quieter in grey. */}
+        <h1
+          aria-live="polite"
+          aria-label={format(month, "MMMM yyyy")}
         >
-          <ChevronLeft size={18} />
-        </button>
-        <div className="cal-title">
-          <h1 aria-live="polite">{format(month, "MMMM yyyy")}</h1>
-          {/* Always in the layout (hidden when not needed) so the title never shifts. */}
+          <span className="m-full">{format(month, "MMMM")}</span>
+          {/* Only on the smallest phones: "Sep 2026". */}
+          <span className="m-short">{format(month, "MMM")}</span>
+          {" "}
+          <span className="cal-year">{format(month, "yyyy")}</span>
+        </h1>
+        <div className="cal-nav">
+          {/* Kept in the layout when hidden, so the arrows never move. */}
           <button
             className="today-btn"
             onClick={onToday}
@@ -123,14 +127,21 @@ export default function CalendarGrid({
           >
             Today
           </button>
+          <button
+            className="icon-btn"
+            onClick={() => onMonthChange(addMonths(month, -1))}
+            aria-label="Previous month"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <button
+            className="icon-btn"
+            onClick={() => onMonthChange(addMonths(month, 1))}
+            aria-label="Next month"
+          >
+            <ChevronRight size={18} />
+          </button>
         </div>
-        <button
-          className="icon-btn"
-          onClick={() => onMonthChange(addMonths(month, 1))}
-          aria-label="Next month"
-        >
-          <ChevronRight size={18} />
-        </button>
       </div>
 
       <div

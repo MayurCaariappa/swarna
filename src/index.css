@@ -441,9 +441,9 @@ a.tile-link:active {
   font-size: 1.3rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 .tile-note {
   font-size: 0.84rem;
@@ -1179,22 +1179,51 @@ a.btn {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2px;
+  gap: 10px;
+  padding: 0 4px; /* lines up with the other page titles */
 }
 .cal-head h1 {
-  font-size: 1.6rem;
+  font-size: clamp(1.25rem, 5.6vw, 1.6rem);
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.cal-title {
+/* The year is quieter than the month: the eye lands on "November". */
+.cal-year {
+  font-weight: 500;
+  color: var(--muted);
+}
+.cal-head .m-short {
+  display: none;
+}
+@media (max-width: 345px) {
+  .cal-head .m-full {
+    display: none;
+  }
+  .cal-head .m-short {
+    display: inline;
+  }
+}
+.cal-nav {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+  flex: none;
+}
+.cal-nav .icon-btn {
+  width: 38px;
+  height: 38px;
+  background: var(--surface);
 }
 .today-btn {
+  flex: none;
   font: inherit;
   font-size: 0.8rem;
   font-weight: 700;
-  height: 30px;
+  height: 32px;
   padding: 0 12px;
+  margin-right: 2px;
   border: none;
   border-radius: 999px;
   background: var(--strong);
@@ -1492,10 +1521,18 @@ a.history-row:active {
   background: currentColor;
   opacity: 0.25;
 }
-.tap-chip .meter i:nth-child(1) { height: 5px; }
-.tap-chip .meter i:nth-child(2) { height: 8px; }
-.tap-chip .meter i:nth-child(3) { height: 11px; }
-.tap-chip .meter i:nth-child(4) { height: 14px; }
+.tap-chip .meter i:nth-child(1) {
+  height: 5px;
+}
+.tap-chip .meter i:nth-child(2) {
+  height: 8px;
+}
+.tap-chip .meter i:nth-child(3) {
+  height: 11px;
+}
+.tap-chip .meter i:nth-child(4) {
+  height: 14px;
+}
 .tap-chip .meter i.on {
   opacity: 1;
 }
@@ -1749,7 +1786,9 @@ details[open] summary {
 }
 .btn.danger-solid {
   background: var(--danger);
-  color: var(--on-strong); /* white on red in light, dark ink on the lighter red in dark */
+  color: var(
+    --on-strong
+  ); /* white on red in light, dark ink on the lighter red in dark */
 }
 @keyframes fade-in {
   from {
