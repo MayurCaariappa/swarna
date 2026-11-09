@@ -9,7 +9,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { pillStatus, type DayInfo } from "../../lib/calendarDays";
 import { toISODate } from "../../lib/pill";
 
@@ -23,8 +23,6 @@ interface Props {
   /** Jump back to today; the button shows only when away from it. */
   onToday: () => void;
   atToday: boolean;
-  pillMode: boolean;
-  showPills: boolean;
 }
 
 /** Month header + day grid + legend. Used by her calendar and the partner's. */
@@ -37,8 +35,6 @@ export default function CalendarGrid({
   onSelect,
   onToday,
   atToday,
-  pillMode,
-  showPills,
 }: Props) {
   // Swipe left / right on the grid to change month.
   const touch = useRef<{ x: number; y: number } | null>(null);
@@ -103,17 +99,50 @@ export default function CalendarGrid({
     onSelect(toISODate(next)); // after the month change, so this day stays selected
   };
 
+  // Full month name when it fits; "Sep 2026" only when it would be cut off.
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [shortTitle, setShortTitle] = useState(false);
+  useLayoutEffect(() => {
+    const h = titleRef.current;
+    if (!h) return;
+    const fit = () => {
+      h.classList.remove("short");
+      const tooWide = h.scrollWidth > h.clientWidth;
+      h.classList.toggle("short", tooWide);
+      setShortTitle(tooWide);
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [month]);
+
+  // The key lists only what's visible this month. Out-of-month days show just
+  // period / predicted fills (their dots and other fills are hidden).
+  const inMonth = days.filter((d) => d.inMonth);
+  const keyItems = [
+    { show: days.some((d) => d.period), icon: "sw bleed", label: "period" },
+    { show: days.some((d) => d.predictedBleed), icon: "sw predicted", label: "predicted" },
+    { show: inMonth.some((d) => d.pill?.taken), icon: "dot taken", label: "pill taken" },
+    { show: inMonth.some((d) => d.pill?.missed), icon: "dot missed", label: "not marked" },
+    { show: inMonth.some((d) => d.off), icon: "sw off", label: "break" },
+    { show: inMonth.some((d) => d.fertile && !d.ovulation), icon: "sw fertile", label: "fertile window" },
+    { show: inMonth.some((d) => d.ovulation), icon: "sw ovulation", label: "ovulation" },
+    { show: inMonth.some((d) => d.logged), icon: "log-mark", label: "logged" },
+  ].filter((k) => k.show);
+
   return (
     <>
       {/* Month left (like every page title), controls grouped on the right. */}
       <div className="cal-head">
         {/* Month in ink, year quieter in grey. */}
         <h1
+          ref={titleRef}
           aria-live="polite"
           aria-label={format(month, "MMMM yyyy")}
+          className={shortTitle ? "short" : undefined}
         >
           <span className="m-full">{format(month, "MMMM")}</span>
-          {/* Only on the smallest phones: "Sep 2026". */}
+          {/* Used only when the full name doesn't fit: "Sep 2026". */}
           <span className="m-short">{format(month, "MMM")}</span>
           {" "}
           <span className="cal-year">{format(month, "yyyy")}</span>
@@ -195,43 +224,16 @@ export default function CalendarGrid({
           ))}
         </div>
 
-        <div className="legend small muted">
-          <span>
-            <i className="sw bleed" /> period
-          </span>
-          <span>
-            <i className="sw predicted" /> predicted
-          </span>
-          <span>
-            <i className="log-mark" /> logged
-          </span>
-          {pillMode ? (
-            <>
-              {showPills && (
-                <>
-                  <span>
-                    <i className="dot taken" /> pill taken
-                  </span>
-                  <span>
-                    <i className="dot missed" /> not marked
-                  </span>
-                </>
-              )}
-              <span>
-                <i className="sw off" /> break
+        {/* Key: only what this month actually shows. */}
+        {keyItems.length > 0 && (
+          <div className="legend small muted" aria-label="Key">
+            {keyItems.map((k) => (
+              <span key={k.label}>
+                <i className={k.icon} /> {k.label}
               </span>
-            </>
-          ) : (
-            <>
-              <span>
-                <i className="sw fertile" /> fertile window
-              </span>
-              <span>
-                <i className="sw ovulation" /> ovulation
-              </span>
-            </>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </>
   );

@@ -57,8 +57,6 @@ export default function PartnerCalendar() {
         onSelect={setSelected}
         onToday={goToday}
         atToday={atToday}
-        pillMode={tracking?.mode === "pill"}
-        showPills={showPills}
       />
 
       {sel && (

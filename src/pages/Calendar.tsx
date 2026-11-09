@@ -53,7 +53,6 @@ export default function Calendar() {
   if (!periods || tracking === undefined) return null;
 
   const sel = days.find((d) => d.date === selected);
-  const pillMode = tracking?.mode === "pill";
   // Most recent period before the selected day that has no end yet → offer "ended this day".
   const openBefore = [...periods]
     .reverse()
@@ -88,8 +87,6 @@ export default function Calendar() {
           setEditing(null);
         }}
         atToday={atToday}
-        pillMode={pillMode}
-        showPills
       />
 
       {sel && (
