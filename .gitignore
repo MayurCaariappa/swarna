@@ -31,3 +31,4 @@ dist-ssr
 # Supabase local
 supabase/.temp
 supabase/.branches
+coverage
